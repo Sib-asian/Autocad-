@@ -177,9 +177,8 @@ def disegna_pianta(ed: Edificio, msp, scala: int = 50, origine=(0.0, 0.0), quote
 def _disegna_apertura(P: _Penna, ed: Edificio, ap):
     m = ed.muro(ap.muro)
     a, b = (np.array(p) for p in apertura_mondo(ed, ap))
-    d, n = direzione(m), normale_sx(m)
+    n = normale_sx(m)
     h = m.spessore.valore / 2
-    w = ap.larghezza
     alta = ap.davanzale.valore > 1.5
     lay = "APERTURE_NASCOSTE" if alta else "APERTURE"
     if ap.altezza.ipotesi or ap.davanzale.ipotesi:
@@ -324,17 +323,6 @@ def _quote_interne(P: _Penna, ed: Edificio, ds: str):
             c = list(pol.exterior.coords)
             for a, b in ((a, b) for a, b in zip(c, c[1:]) if math.dist(a, b) > 0.3):
                 P.ent.extend(quota_allineata(P.msp, P.T(a), P.T(b), mm(7, sc), ds))
-
-
-class LineStringSafe:
-    def __init__(self, p0, p1):
-        self.a, self.b = np.array(p0, float), np.array(p1, float)
-
-    def distance_to(self, p):
-        p = np.array(p, float)
-        ab = self.b - self.a
-        t = np.clip(np.dot(p - self.a, ab) / np.dot(ab, ab), 0, 1)
-        return float(np.linalg.norm(self.a + ab * t - p))
 
 
 def _linea_sezione(P: _Penna, ed: Edificio, sez):

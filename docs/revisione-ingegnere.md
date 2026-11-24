@@ -20,6 +20,18 @@ tavole in uscita, e poi le domande che farebbero un collega, un ufficio tecnico 
 | 6 | In sezione il tetto era una fascia unica | collega, strutturista | stratigrafia: manto, tavolato/listelli, travi principali in sezione |
 | 7 | Dati del tecnico nel cartiglio da scrivere ogni volta | studio | file `config/studio.yaml` |
 
+## Cosa e' stato fatto (stesso giorno)
+
+| # | Stato | Dove |
+|---|---|---|
+| 1 | fatto: superficie finestrata reale, esiti 1/8 e altezze per uso, superficie lorda e coperta, volume v.p.p. esatto, SU/SNR, controllo nel report | `rilievo/genera/tabelle.py` |
+| 2 | fatto: sigle "F1 80x120 dav.110" e catena muro/vano lungo i lati | `rilievo/genera/pianta.py` |
+| 3 | fatto: profili sanatoria (legittimo/fatto/comparativa) e CILA-SCIA-permesso (fatto/progetto/comparativa) | `rilievo/genera/tavola.py`, `comparativa.py` |
+| 4 | fatto: coni ottici, elenco foto, PDF della documentazione fotografica, quadro fessurativo con classi | `rilievo/genera/perizia.py` |
+| 5 | fatto: `rilievo costruisci` dal rilievo per locali (esempio: `esempi/rilievo_caso_2031.yaml`) | `rilievo/costruttore.py` |
+| 6 | fatto: manto, tavolato, travi tagliate o viste (schematiche, dichiarate "da rilevare") | `rilievo/genera/sezioni.py` |
+| 7 | fatto: `config/studio.yaml` (vedi `config/studio.esempio.yaml`) | `rilievo/cli.py` |
+
 ## Fuori da questo giro (da fare quando servira')
 - Tavole in layout di AutoCAD con finestre in scala (oggi i fogli sono nello spazio modello, in scala reale:
   si stampano con "finestra" alla scala 1:50).

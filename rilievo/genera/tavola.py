@@ -5,10 +5,9 @@ from dataclasses import dataclass, field
 from datetime import date
 from typing import Callable
 
-from shapely.ops import unary_union
 
 from ..dxf.quote import fmt
-from ..dxf.stile import mm, nuovo_documento, testo
+from ..dxf.stile import nuovo_documento
 from ..geometria import ingombro_muri
 from ..modello import Edificio
 from .pianta import Ingombro, _Penna, disegna_pianta, retino

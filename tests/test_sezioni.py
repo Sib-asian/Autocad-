@@ -54,3 +54,21 @@ def test_sezione_parallela_al_colmo_non_vede_la_gronda_attraverso_il_tetto(ed_sc
     g = geometria_sezione(ed_scatola, sez)
     bordi = [p for p in g.visti if p.faccia.tipo == "bordo_falda"]
     assert sum(p.poligono2d.area for p in bordi) < 1e-6
+
+
+def test_travi_tagliate_nella_sezione_parallela_al_colmo(ed_scatola):
+    from rilievo.genera.sezioni import stratigrafia_copertura
+    sez = LineaSezione(nome="B", p0=(-1, 1.0), p1=(7.5, 1.0), verso="dx")
+    s = stratigrafia_copertura(ed_scatola, sez)
+    # falda larga 7,15 + sporti: travi ogni 0,60 m
+    assert 10 <= len(s.travi_tagliate) <= 14
+    for t in s.travi_tagliate:
+        x0, z0, x1, z1 = t.bounds
+        assert x1 - x0 == pytest.approx(0.12, abs=1e-6) and z1 - z0 == pytest.approx(0.16, abs=1e-6)
+    assert s.linee_manto
+
+
+def test_trave_vista_nella_sezione_lungo_la_pendenza(ed_scatola):
+    from rilievo.genera.sezioni import stratigrafia_copertura
+    s = stratigrafia_copertura(ed_scatola, SEZ)
+    assert not s.travi_tagliate and len(s.travi_viste) == 2  # una per falda

@@ -5,12 +5,12 @@ import math
 from dataclasses import dataclass
 
 import numpy as np
-from shapely.geometry import LineString, MultiLineString, Polygon, box
+from shapely.geometry import LineString, MultiLineString
 from shapely.ops import unary_union
 
 from ..dxf.quote import catena, fmt_quota
 from ..dxf.stile import aggiungi_dimstyle, mm
-from ..geometria import apertura_mondo, direzione, perimetro_esterno, poligono_muro
+from ..geometria import direzione, perimetro_esterno, poligono_muro
 from ..modello import Edificio
 from ..modello3d import facce
 from ..proiezione import Pezzo, assi_vista, proietta
@@ -109,7 +109,7 @@ def disegna_pezzi(ed, nome, sinistra, destra, pezzi: list[Pezzo], msp, scala, or
                 P.poly(list(pol.exterior.coords), "IPOTESI_DA_VERIFICARE")
     # --- terreno
     zt = ed.quota_terreno.valore
-    e = P.poly([(minx - 1.0, zt), (maxx + 1.0, zt)], "TERRENO")
+    P.poly([(minx - 1.0, zt), (maxx + 1.0, zt)], "TERRENO")
 
     if vista is not None:
         _pluviali(P, ed, vista, pezzi, zt)

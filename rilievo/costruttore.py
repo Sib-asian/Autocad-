@@ -10,7 +10,7 @@ from dataclasses import dataclass
 
 import ezdxf
 import numpy as np
-from shapely.geometry import LineString, Point, Polygon
+from shapely.geometry import Point, Polygon
 from shapely.geometry.polygon import orient
 from shapely.ops import unary_union
 

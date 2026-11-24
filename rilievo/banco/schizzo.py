@@ -14,7 +14,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-from shapely.geometry import LineString, Polygon
+from shapely.geometry import LineString
 from shapely.geometry.polygon import orient
 
 from ..geometria import apertura_mondo, direzione, normale_sx, perimetro_esterno, poligono_locale, poligoni_muri

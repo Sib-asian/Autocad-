@@ -219,9 +219,7 @@ def cmd_punti(a) -> int:
 
 def cmd_raddrizza(a) -> int:
     import cv2
-    import numpy as np
-
-    from .foto.raddrizza import leggi_exif, misura, raddrizza, stima_K, stima_k1
+    from .foto.raddrizza import leggi_exif, raddrizza, stima_K, stima_k1
     img = cv2.imread(a.foto)
     ex = leggi_exif(a.foto)
     K = stima_K(img.shape[1], img.shape[0], focale_35mm=ex.get("focale_35mm"))

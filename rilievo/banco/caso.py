@@ -113,7 +113,6 @@ def genera_caso(seed: int) -> Edificio:
         aps.append(Apertura(id=f"PI{i + 1}", muro=f"MI{i + 1}", da=V(valore=da), a=V(valore=round(da + 0.9, 2)),
                             altezza=V(valore=_r(rng, 1.9, 2.2)), tipo="porta", forma="arco", battente="sx"))
     # porta verso l'annesso nel muro nord (progressive da est verso ovest)
-    mn = next(mm for mm in muri if mm.id == "MN")
     s_mid = (xe_n - (a0 + aw / 2))  # distanza dall'origine dell'asse nord
     pa = round(s_mid - h - 0.4, 2)
     aps.append(Apertura(id="PA", muro="MN", da=V(valore=pa), a=V(valore=round(pa + 0.8, 2)),

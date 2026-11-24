@@ -11,7 +11,6 @@ from dataclasses import dataclass, field
 import numpy as np
 from shapely.geometry import LineString, MultiPolygon, Polygon
 from shapely.geometry.polygon import orient
-from shapely.ops import unary_union
 
 from .geometria import (apertura_mondo, ingombro_muri, poligono_muro, profilo_apertura, quota_intradosso,
                         z_falda)
