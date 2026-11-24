@@ -9,5 +9,6 @@ tecniche (pianta, prospetti, sezioni) in DWG AutoCAD 2018 e PDF. Si risponde in 
 - Ambiente: `pip install -e .[test]`; il DWG richiede ODA File Converter + `xvfb-run` (vedi README).
 - Test: `pytest -q` (circa un minuto).
 - Ogni dato non misurato va nel modello con `fonte: ipotesi`: esce in rosso nelle tavole e nel registro.
-- Prima di disegnare prospetti o sezioni leggere `docs/lezioni/R001-errori-da-non-ripetere.md`: altezze dell'utente
-  senza interpretazioni, niente elementi inventati, `rilievo verifica` senza ERRORE e DXF guardato come in AutoCAD.
+- Prima di ogni pratica leggere le lezioni in `docs/lezioni/` del tipo di lavoro (prospetti e sezioni: R001).
+- Alla fine di ogni pratica, anche se è andata bene: lezione, test del caso reale, controllo automatico se
+  possibile, procedura aggiornata (vedi `docs/lezioni/README.md`). Così ogni lavoro rende il successivo migliore.

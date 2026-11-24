@@ -56,8 +56,10 @@ Disegni imprecisi: interpretali con buon senso da tecnico, non ricalcarli.
    - totali dei prospetti = misure esterne della pianta; stesse quote di gronda e colmo in prospetti e sezioni;
    - se qualcosa non torna, si corregge il programma (con un test) prima di consegnare, non dopo.
    Errori gia' fatti e da non ripetere: `docs/lezioni/R001-errori-da-non-ripetere.md` (leggerlo prima).
-6. **Consegna.** Invia DWG + PDF + `verifica.md` + `registro_ipotesi.md`. Nel messaggio: cosa c'e', i controlli
+6. **Consegna.** Invia solo il DWG pulito delle tavole richieste (PDF solo se l'utente lo chiede). Nel messaggio: cosa c'e', i controlli
    superati con i numeri, l'elenco delle ipotesi da verificare, e che le tavole vanno firmate da un tecnico abilitato.
+7. **Lezione.** Finita la pratica: lezione in `docs/lezioni/`, test del caso reale, controllo automatico se
+   l'errore si può riconoscere, regole nuove qui. Procedura completa in `docs/lezioni/README.md`.
 
 ## Regole che non si piegano
 
