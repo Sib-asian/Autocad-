@@ -97,26 +97,82 @@ def _impagina(viste: list[tuple[Vista, Ingombro]], scala: int):
     raise ValueError("Le viste non entrano neanche in un A0: dividere la tavola")
 
 
-def componi_tavole(ed: Edificio, profilo: str = "rilievo", scala: int | None = None,
-                   studio: dict | None = None) -> Tavole:
+PROFILI_PROGETTO = ("cila", "scia", "permesso", "progetto")
+
+
+def _viste_pianta(ed: Edificio, scala: int, titolo: str = "PIANTA", tabelle: bool = True) -> list[Vista]:
+    v: list[Vista] = [lambda m, o: disegna_pianta(ed, m, scala, o, titolo=titolo)]
+    if tabelle and ed.locali:
+        v.append(lambda m, o: _tabella(ed, m, o, scala))
+    v.append(lambda m, o: _legenda(ed, m, o, scala))
+    v.append(lambda m, o: _note(ed, m, o, scala))
+    return v
+
+
+def _viste_prospetti(ed: Edificio, scala: int) -> list[Vista]:
+    return [(lambda vv: (lambda m, o: disegna_prospetto(ed, vv, m, scala, o)))(v) for v in lati_prospetto(ed)]
+
+
+def _viste_sezioni(ed: Edificio, scala: int) -> list[Vista]:
+    return [(lambda ss: (lambda m, o: disegna_sezione(ed, ss, m, scala, o)))(s) for s in ed.sezioni]
+
+
+def _gruppi_stato(ed: Edificio, scala: int, nome: str, completo: bool = True):
+    """Pianta (+ prospetti e sezioni se completo) di uno stato, con il nome dello stato nel titolo."""
+    g = [(f"{nome} - pianta", _viste_pianta(ed, scala, f"PIANTA - {nome.upper()}"))]
+    if completo:
+        if p := _viste_prospetti(ed, scala):
+            g.append((f"{nome} - prospetti", p))
+        if s := _viste_sezioni(ed, scala):
+            g.append((f"{nome} - sezioni", s))
+    return g
+
+
+def componi_tavole(ed: Edificio, profilo: str | None = None, scala: int | None = None,
+                   studio: dict | None = None, legittimo: Edificio | None = None,
+                   progetto: Edificio | None = None) -> Tavole:
+    """Tavole secondo il tipo di pratica.
+
+    rilievo: pianta, prospetti, sezioni dello stato di fatto.
+    sanatoria: stato legittimo, stato di fatto, comparativa (legittimo -> fatto).
+    cila / scia / permesso / progetto: stato di fatto, stato di progetto, comparativa (fatto -> progetto).
+    perizia: rilievo + quadro fessurativo e documentazione fotografica.
+    """
+    from .comparativa import differenze, disegna_comparativa, stato_fatto, stato_progetto
+    profilo = profilo or ed.pratica.tipo
     scala = scala or scala_automatica(ed)
     doc = nuovo_documento(scala)
     msp = doc.modelspace()
     t = Tavole(doc, [], scala)
     gruppi: list[tuple[str, list[Vista]]] = []
 
-    viste_pianta: list[Vista] = [lambda m, o: disegna_pianta(ed, m, scala, o)]
-    if ed.locali:
-        viste_pianta.append(lambda m, o: _tabella(ed, m, o, scala))
-    viste_pianta.append(lambda m, o: _legenda(ed, m, o, scala))
-    viste_pianta.append(lambda m, o: _note(ed, m, o, scala))
-    gruppi.append(("Pianta", viste_pianta))
-    pros = [(lambda vv: (lambda m, o: disegna_prospetto(ed, vv, m, scala, o)))(v) for v in lati_prospetto(ed)]
-    if pros:
-        gruppi.append(("Prospetti", pros))
-    sez = [(lambda ss: (lambda m, o: disegna_sezione(ed, ss, m, scala, o)))(s) for s in ed.sezioni]
-    if sez:
-        gruppi.append(("Sezioni", sez))
+    def comparativa(prima, dopo):
+        dem, cos = differenze(prima, dopo)
+        return ("Comparativa", [lambda m, o: disegna_comparativa(dopo, m, scala, o, dem, cos),
+                                lambda m, o: _note(dopo, m, o, scala)])
+
+    if profilo == "sanatoria":
+        if legittimo is None:
+            raise ValueError("Per la sanatoria serve lo stato legittimo (modello/legittimo.yaml): e' lo stato "
+                             "dell'ultimo titolo edilizio valido")
+        gruppi += _gruppi_stato(legittimo, scala, "Stato legittimo", completo=True)
+        gruppi += _gruppi_stato(ed, scala, "Stato di fatto")
+        gruppi.append(comparativa(legittimo, ed))
+    elif profilo in PROFILI_PROGETTO:
+        fatto = stato_fatto(ed) if progetto is None else ed
+        prog = progetto if progetto is not None else stato_progetto(ed)
+        gruppi += _gruppi_stato(fatto, scala, "Stato di fatto", completo=True)
+        gruppi += _gruppi_stato(prog, scala, "Stato di progetto")
+        gruppi.append(comparativa(fatto, prog))
+    else:
+        gruppi.append(("Pianta", _viste_pianta(ed, scala)))
+        if p := _viste_prospetti(ed, scala):
+            gruppi.append(("Prospetti", p))
+        if s := _viste_sezioni(ed, scala):
+            gruppi.append(("Sezioni", s))
+        if profilo == "perizia":
+            from .perizia import gruppi_perizia
+            gruppi += gruppi_perizia(ed, scala)
 
     x_foglio = 0.0
     s = scala / 1000
@@ -155,7 +211,8 @@ def _cornice_e_cartiglio(ed, msp, o, W, H, scala, n, contenuto, formato, studio)
              (0.5, f"Pratica: {pr.codice}  ({pr.tipo})", 2.2)]),
         (10, [(0.5, f"TAV. {n} - {contenuto.upper()}", 3.2), (0.25, f"Scala 1:{scala}", 2.5),
               (0.25, f"Formato {formato}", 2.5)]),
-        (8, [(0.5, f"Tecnico: {studio.get('tecnico') or pr.tecnico or '-'}", 2.2),
+        (8, [(0.5, f"Tecnico: {studio.get('tecnico') or pr.tecnico or '-'}"
+                   + (f" ({studio['albo']})" if studio.get('albo') else ""), 2.0),
              (0.5, f"Data: {pr.data or date.today().strftime('%d/%m/%Y')}", 2.2)]),
         (10, [(1.0, "Elaborato da verificare e firmare a cura del tecnico abilitato. "
                     "In rosso: dati ipotizzati da verificare.", 1.8)]),

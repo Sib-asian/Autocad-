@@ -55,7 +55,19 @@ def cmd_genera(a) -> int:
         for e in err:
             print(" -", e)
         return 2
-    t = componi_tavole(ed, profilo=a.profilo, scala=a.scala)
+    altri = {}
+    for nome in ("legittimo", "progetto"):
+        f = base / "modello" / f"{nome}.yaml"
+        if f.exists():
+            from .modello import carica
+            altri[nome] = carica(f)
+            print(f"Letto lo stato {nome}: {f}")
+    studio = _studio()
+    try:
+        t = componi_tavole(ed, profilo=a.profilo, scala=a.scala, studio=studio, **altri)
+    except ValueError as e:
+        print("Impossibile comporre le tavole:", e)
+        return 2
     out = esporta(t, base / "output", base.resolve().name, dwg=not a.no_dwg)
     rep = verifica(ed, t, dwg=out.get("dwg"))
     (base / "output" / "verifica.md").write_text(rep.markdown(), encoding="utf-8")
@@ -64,6 +76,15 @@ def cmd_genera(a) -> int:
         print(f"{k}: {v}")
     print(f"Verifica: {'superata' if rep.ok else 'CON ERRORI'} (vedi output/verifica.md)")
     return 0 if rep.ok else 1
+
+
+def _studio() -> dict:
+    """Dati del tecnico per il cartiglio (config/studio.yaml), se presenti."""
+    import yaml
+    for p in (Path("config/studio.yaml"), Path.home() / ".config" / "rilievo" / "studio.yaml"):
+        if p.exists():
+            return yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+    return {}
 
 
 def registro(ed) -> str:
@@ -230,7 +251,8 @@ def main(argv=None) -> int:
     s.set_defaults(f=cmd_nuova)
     s = sp.add_parser("genera", help="disegna le tavole (DWG, PDF) e le verifica")
     s.add_argument("pratica")
-    s.add_argument("--profilo", default="rilievo")
+    s.add_argument("--profilo", help="rilievo, sanatoria, cila, scia, permesso, progetto, perizia "
+                                     "(se manca: il tipo scritto nel modello)")
     s.add_argument("--scala", type=int)
     s.add_argument("--no-dwg", action="store_true")
     s.set_defaults(f=cmd_genera)

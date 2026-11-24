@@ -34,3 +34,20 @@ def test_cli_zoom(tmp_path):
     cv2.imwrite(str(img), np.full((100, 200, 3), 255, np.uint8))
     assert main(["zoom", str(img), "10", "10", "50", "40", "--fattore", "3", "--out", str(tmp_path / "z.png")]) == 0
     assert cv2.imread(str(tmp_path / "z.png")).shape[:2] == (120, 150)
+
+
+def test_cli_sanatoria_con_legittimo(tmp_path, monkeypatch):
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent))
+    from conftest import scatola
+    monkeypatch.chdir(tmp_path)
+    main(["nuova", "S001"])
+    base = tmp_path / "pratiche" / "S001"
+    fatto = scatola(aperture=[{"id": "F1", "muro": "MS", "da": 3.5, "a": 4.3, "altezza": 0.8, "davanzale": 1.2}])
+    fatto.pratica.tipo = "sanatoria"
+    salva(fatto, base / "modello" / "edificio.yaml")
+    assert main(["genera", str(base), "--no-dwg"]) == 2  # manca lo stato legittimo: messaggio chiaro
+    salva(scatola(), base / "modello" / "legittimo.yaml")
+    (tmp_path / "config").mkdir()
+    (tmp_path / "config" / "studio.yaml").write_text("tecnico: Ing. Prova\n")
+    assert main(["genera", str(base), "--no-dwg"]) == 0

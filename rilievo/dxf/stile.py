@@ -25,6 +25,8 @@ LAYER = {
     "LINEE_SEZIONE": (1, 35, "DASHDOT"),
     "DEGRADO": (6, 25, "Continuous"),
     "IPOTESI_DA_VERIFICARE": (1, 25, "Continuous"),
+    "COMPARATIVA_DEMOLIZIONI": (2, 25, "Continuous"),
+    "COMPARATIVA_COSTRUZIONI": (1, 25, "Continuous"),
     "NOTE": (7, 18, "Continuous"),
     "CARTIGLIO": (7, 35, "Continuous"),
     "CORNICE": (7, 70, "Continuous"),

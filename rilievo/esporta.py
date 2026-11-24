@@ -62,7 +62,7 @@ def roundtrip_ok(dwg: str | Path, doc) -> bool:
         return conta_entita(ezdxf.readfile(back)) == conta_entita(doc)
 
 
-COLORI_STAMPA = {"IPOTESI_DA_VERIFICARE": 1, "DEGRADO": 6, "LINEE_SEZIONE": 7, "RETINI": 8, "SEZ_TRATTEGGI": 8,
+COLORI_STAMPA = {"IPOTESI_DA_VERIFICARE": 1, "COMPARATIVA_DEMOLIZIONI": 2, "COMPARATIVA_COSTRUZIONI": 1, "DEGRADO": 6, "LINEE_SEZIONE": 7, "RETINI": 8, "SEZ_TRATTEGGI": 8,
                  "SEZ_VISTO": 8, "COPERTURA_PIANTA": 8}
 
 

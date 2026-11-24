@@ -1,0 +1,5 @@
+# Copia questo file in config/studio.yaml e completa: i dati finiscono nel cartiglio di ogni tavola.
+tecnico: "Ing. Nome Cognome"
+albo: "Ordine degli Ingegneri di ... n. ..."
+studio: "Studio tecnico ..."
+indirizzo: "Via ..., Comune"
