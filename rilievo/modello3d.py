@@ -175,6 +175,8 @@ def facce(ed: Edificio) -> list[Faccia]:
         ipot = any(q.ipotesi for q in f.quote)
         out.append(Faccia(top, "falda", materiale=f.manto, rif_id=f.id, ipotesi=ipot))
         sp = f.spessore.valore
+        sotto = (top - [0, 0, sp])[::-1]  # intradosso, normale verso il basso
+        out.append(Faccia(sotto, "intradosso_falda", materiale=f.struttura, rif_id=f.id, ipotesi=ipot))
         for a, b in zip(top, np.roll(top, -1, axis=0)):
             bordo = np.array([a, b, b - [0, 0, sp], a - [0, 0, sp]])
             out.append(Faccia(bordo, "bordo_falda", materiale=f.manto, rif_id=f.id, ipotesi=ipot))
