@@ -1,6 +1,6 @@
 # Rilievo → Tavole: documento di progetto
 
-Data: 2026-11-24 · Stato: bozza da approvare
+Data: 2026-11-24 · Stato: approvato (l'utente ha delegato le scelte)
 
 ## 1. Perché
 
@@ -209,6 +209,24 @@ nuova sessione in questo repo sa come procedere:
 Una riga di comando `rilievo` espone i passi: `nuova`, `importa`, `genera`, `verifica`,
 `esporta`, `scheda`.
 
+### 5.9 Modalità tirocinante
+L'utente è un tirocinante alle prime armi. Lo strumento quindi insegna mentre lavora:
+- ogni domanda spiega perché il dato serve (es. "l'altezza della gronda serve per il
+  prospetto e per il volume");
+- il report di verifica spiega ogni controllo in una riga;
+- `docs/guida/` contiene una guida breve: come si misura un rilievo, quote progressive, come
+  fotografare una facciata, cosa contiene una pratica di sanatoria, CILA o perizia, e le
+  convenzioni grafiche con il loro perché.
+
+### 5.10 Banco di prova
+Un generatore di casi inventati ma coerenti, a partire da un "edificio vero" casuale:
+- un DWG di pianta "come quello di un collega";
+- foto sintetiche in prospettiva delle facciate, con distorsione dell'obiettivo;
+- uno schizzo a penna su pianta stampata, con misure a mano, correzioni e scarabocchi.
+
+La verità resta in un file separato. Serve a misurare l'errore dello strumento, anche la
+lettura "alla cieca" dello schizzo da parte di Claude.
+
 ## 6. Tecnologie
 Python 3.11 o superiore:
 - ezdxf: disegno DXF, quote, retini, render;
@@ -219,6 +237,11 @@ Python 3.11 o superiore:
 - matplotlib (backend di ezdxf): PDF in scala;
 - ODA File Converter (headless): DWG 2018; LibreDWG come riserva;
 - pytest per i test.
+
+Verificato il 2026-11-24: ODA File Converter 27.10 (pacchetto .deb) funziona senza
+interfaccia grafica, con `xvfb-run` e le librerie libopengl0/libegl1. Il giro
+DXF → DWG AC1032 → DXF conserva il numero di entità (LWPOLYLINE, TEXT, DIMENSION, HATCH).
+Il carattere a mano Caveat (licenza OFL) è scaricabile da cdn.jsdelivr.net.
 
 ## 7. Fasi
 1. **Motore e primo caso reale** (il rustico di questo sopralluogo):
