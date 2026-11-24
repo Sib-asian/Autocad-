@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rilievo"
+version = "0.1.0"
+description = "Dal rilievo (schizzo, DWG, foto) alle tavole tecniche: pianta, prospetti, sezioni"
+requires-python = ">=3.11"
+dependencies = ["ezdxf>=1.4", "shapely>=2.0", "pydantic>=2", "pyyaml", "numpy", "opencv-python-headless", "pymupdf", "matplotlib", "pillow"]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.scripts]
+rilievo = "rilievo.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["rilievo*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
