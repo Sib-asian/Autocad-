@@ -17,7 +17,9 @@ Richiesta: 4 prospetti e 2 sezioni, semplici, puliti e coerenti con la pianta GR
 
 ## Scelte fatte (da verificare)
 - Muri del DWG inclinati di 2,2 gradi in modo uniforme: raddrizzati (imprecisione del disegno).
-- Muro est del Vano 3 storto di altri 5 gradi: lasciato storto (lo e' anche nella planimetria).
+- Muro est del Vano 3 storto di altri 5 gradi: lasciato storto (lo e' anche nella planimetria). Nel DWG il
+  suo filo esterno e' allineato alla facciata est del Vano 2; lo spigolo interno ovest del Vano 3 e' 0,53 a
+  ovest di quello del Vano 2 (origine 6,17).
 - Spessore del tetto 0,25 (stimato) sopra le altezze interne; nessuno sporto di gronda; terreno a -0,10.
 - Finestre: altezze e davanzali stimati, in rosso. Porta del Vano 2 alta 2,20 come quella del Vano 1.
 - Sezione A-A lungo i Vani 1 e 2 (guarda a nord); B-B attraverso le due porte del Vano 2 e il Vano 3

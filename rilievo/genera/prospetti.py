@@ -84,6 +84,7 @@ def disegna_pezzi(ed, nome, sinistra, destra, pezzi: list[Pezzo], msp, scala, or
     P = _Penna(msp, o, scala)
     lay_contorno = "PROSPETTI_CONTORNO" if tagliati is None else "SEZ_VISTO"
     lay_dett = "PROSPETTI_DETTAGLI" if tagliati is None else "SEZ_VISTO"
+    lay_spig = "PROSPETTI_SPIGOLI" if tagliati is None else "SEZ_VISTO"
 
     # --- spigoli visibili: le superfici sullo stesso piano si fondono (nessuna linea interna fra corpi
     #     allineati), il sottotetto non si disegna, i segmenti minuscoli si scartano
@@ -92,27 +93,25 @@ def disegna_pezzi(ed, nome, sinistra, destra, pezzi: list[Pezzo], msp, scala, or
         if p.faccia.tipo in ("infisso", "intradosso_falda"):
             continue
         n = p.faccia.normale
-        chiave = (p.faccia.tipo == "falda", tuple(np.round(n, 3)), round(float(n @ p.faccia.pts[0]), 3))
+        cat = {"falda": "falda", "bordo_falda": "bordo"}.get(p.faccia.tipo, "parete")  # muro e tetto distinti
+        chiave = (cat, tuple(np.round(n, 3)), round(float(n @ p.faccia.pts[0]), 3))
         piani.setdefault(chiave, []).append(p.poligono2d)
     contorni = [unary_union(g).buffer(0.002, join_style="mitre").buffer(-0.002, join_style="mitre")
                 for g in piani.values()]
     bordi = unary_union([c.boundary for c in contorni if not c.is_empty])
+    if tagliati is None:  # cio' che sta sulla sagoma lo disegna gia' il contorno spesso: niente doppioni
+        bordi = bordi.difference(unary_union([q.exterior for q in _poligoni(sil)]).buffer(0.003))
     for ln in _linee(bordi.simplify(0.003)):
         if ln.length >= 0.02:
-            P.poly(list(ln.coords), lay_dett)
-    # --- infissi: telaio e ante
+            P.poly(list(ln.coords), lay_spig)
+    # --- infissi: contorno (rosso se le misure sono stimate), telaio e ante
     for p in pezzi:
         if p.faccia.tipo == "infisso":
-            _infisso(P, ed, p, lay_dett)
+            _infisso(P, ed, p, "IPOTESI_DA_VERIFICARE" if p.faccia.ipotesi else lay_spig, lay_dett)
     # --- sagoma esterna spessa (solo prospetti)
     if tagliati is None:
         for pol in _poligoni(sil):
             P.poly(list(pol.exterior.coords), lay_contorno)
-    # --- ipotesi in rosso: solo le aperture con misure stimate (le ipotesi sul tetto sono nelle note)
-    for p in pezzi:
-        if p.faccia.tipo == "infisso" and p.faccia.ipotesi:
-            for pol in _poligoni(p.poligono2d):
-                P.poly(list(pol.exterior.coords), "IPOTESI_DA_VERIFICARE")
     # --- terreno
     zt = ed.quota_terreno.valore
     P.poly([(minx - 1.0, zt), (maxx + 1.0, zt)], "TERRENO")
@@ -185,11 +184,12 @@ def _quote_livello(P: _Penna, livelli, minx, sc):
         P.testo(fmt_quota(z), (x - mm(1, sc), z + t * 1.6), 2.2, "QUOTE", "BOTTOM_RIGHT")
 
 
-def _infisso(P: _Penna, ed: Edificio, p: Pezzo, layer):
+def _infisso(P: _Penna, ed: Edificio, p: Pezzo, lay_vano, layer):
+    """Vano dell'apertura (lay_vano) e, sottili, telaio, ante, doghe o grata (layer)."""
     ap = next((a for a in ed.aperture if a.id == p.faccia.rif_id), None)
     for pol in _poligoni(p.poligono2d):
         telaio = pol.buffer(-0.05, join_style="mitre")
-        P.poly(list(pol.exterior.coords), layer)
+        P.poly(list(pol.exterior.coords), lay_vano)
         if telaio.is_empty:
             continue
         for t in _poligoni(telaio):
@@ -208,7 +208,7 @@ def _infisso(P: _Penna, ed: Edificio, p: Pezzo, layer):
                 righe.append([(x0 + k, z0), (x0 + k + (z1 - z0), z1)])
                 righe.append([(x0 + k + (z1 - z0), z0), (x0 + k, z1)])
             for ln in _linee(MultiLineString(righe).intersection(telaio)):
-                P.poly(list(ln.coords), "PROSPETTI_DETTAGLI")
+                P.poly(list(ln.coords), layer)
             continue
         if ap is not None and ap.tipo == "porta":
             # doghe verticali del portone in legno
@@ -216,7 +216,7 @@ def _infisso(P: _Penna, ed: Edificio, p: Pezzo, layer):
             for i in range(1, n):
                 xx = x0 + 0.05 + (w - 0.1) * i / n
                 for ln in _linee(LineString([(xx, z0), (xx, z1)]).intersection(telaio)):
-                    P.poly(list(ln.coords), "PROSPETTI_DETTAGLI")
+                    P.poly(list(ln.coords), layer)
 
 
 def _faccia_verso(ed: Edificio, muro_id: str, vista: Vista) -> bool:

@@ -13,7 +13,7 @@ locali:
      spessori_lati: {ovest: 0.35, sud: 0.49, nord: 0.60}}
   - {nome: Vano 2, a_destra_di: Vano 1, spessore_muro: 0.35, larghezza: 3.85, profondita: 3.81,
      h_min: 3.00, h_max: 3.80, spessori_lati: {est: 0.45, sud: 0.49, nord: 0.50}}
-  - {nome: Vano 3, origine: [6.18, 4.31], larghezza: 4.68, larghezza_nord: 4.39, profondita: 3.16,
+  - {nome: Vano 3, origine: [6.17, 4.31], larghezza: 4.68, larghezza_nord: 4.39, profondita: 3.16,
      spessore_esterno: 0.15, materiale: blocchi di cls, h_min: 2.05, h_max: 3.00}
 aperture:
   # Vano 1, sud (foto 11, 3): finestra alta con ante in ferro; porta in ferro con parte vetrata

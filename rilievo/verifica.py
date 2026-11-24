@@ -69,7 +69,16 @@ def controlla_catene(doc) -> Controllo:
         linee[chiave].append(voce)
         tutte.append(voce)
     errori, verificate = [], 0
+    catene = []  # sulla stessa retta possono stare catene di disegni diversi: si separano i tratti contigui
     for chiave, voci in linee.items():
+        corrente = []
+        for v in sorted(voci):
+            if corrente and abs(v[0] - corrente[-1][1]) > 1e-3:
+                catene.append((chiave, corrente))
+                corrente = []
+            corrente.append(v)
+        catene.append((chiave, corrente))
+    for chiave, voci in catene:
         if len(voci) < 2:
             continue
         lo, hi = min(v[0] for v in voci), max(v[1] for v in voci)

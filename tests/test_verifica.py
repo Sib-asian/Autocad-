@@ -65,3 +65,17 @@ def test_requisiti_segnalati(ed_scatola):
     rep = verifica(ed, componi_tavole(ed))
     riga = [c for c in rep.righe if c.nome == "Requisiti igienico-sanitari"][0]
     assert riga.esito == "ATTENZIONE" and "Cucina" in riga.dettagli[0]
+
+
+def test_catene_allineate_di_disegni_diversi_si_verificano_separate():
+    """Due catene alla stessa altezza (es. prospetto e sezione affiancati) non vanno mescolate."""
+    from rilievo.dxf.quote import catena
+    from rilievo.dxf.stile import nuovo_documento
+    from rilievo.verifica import controlla_catene
+    doc = nuovo_documento(50)
+    msp = doc.modelspace()
+    for x0 in (0.0, 30.0):
+        catena(msp, [(x0, 0.0), (x0 + 1.0, 0.0), (x0 + 3.5, 0.0)], (1, 0), -0.6, "RIL_50", totale=True,
+               offset_totale=-1.0)
+    c = controlla_catene(doc)
+    assert c.esito == "OK" and c.trovato.startswith("2 catene")

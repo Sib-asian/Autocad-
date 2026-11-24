@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 import numpy as np
 from shapely.geometry import LineString, MultiPolygon, Polygon
 from shapely.geometry.polygon import orient
+from shapely.ops import unary_union
 
 from .geometria import (apertura_mondo, ingombro_muri, poligono_muro, profilo_apertura, quota_intradosso,
                         z_falda)
@@ -53,13 +54,85 @@ def _anelli(geom):
             yield "int", list(r.coords)
 
 
+def _dist_seg(p, a, b) -> float:
+    ax, ay = a
+    dx, dy = b[0] - ax, b[1] - ay
+    L2 = dx * dx + dy * dy
+    t = 0.0 if L2 == 0 else max(0.0, min(1.0, ((p[0] - ax) * dx + (p[1] - ay) * dy) / L2))
+    return math.hypot(p[0] - ax - t * dx, p[1] - ay - t * dy)
+
+
+def _togli_dentelli(coords, lung_max: float = 1.0, dev_dentello: float = 0.06, dev_piega: float = 0.015):
+    """1) un tratto breve (< lung_max) che si scosta dalla corda meno di dev_dentello e' un dentello: diventa
+    la corda; 2) un vertice a meno di dev_piega dalla retta dei vicini e' una piega: si toglie."""
+    pts = [tuple(c) for c in coords[:-1]]
+    cambiato = True
+    while cambiato and len(pts) > 4:
+        cambiato = False
+        n = len(pts)
+        for i in range(n):
+            for k in range(min(8, n - 2), 1, -1):
+                tratto = [pts[(i + q) % n] for q in range(k + 1)]
+                lung = sum(math.dist(u, v) for u, v in zip(tratto, tratto[1:]))
+                if lung > lung_max:
+                    continue
+                if max(_dist_seg(q, tratto[0], tratto[-1]) for q in tratto[1:-1]) <= dev_dentello:
+                    togli = {(i + q) % n for q in range(1, k)}
+                    pts = [q for j, q in enumerate(pts) if j not in togli]
+                    cambiato = True
+                    break
+            if cambiato:
+                break
+    cambiato = True
+    while cambiato and len(pts) > 4:
+        cambiato = False
+        for i in range(len(pts)):
+            if _dist_seg(pts[i], pts[i - 1], pts[(i + 1) % len(pts)]) <= dev_piega:
+                pts.pop(i)
+                cambiato = True
+                break
+    # 3) smussi: un lato cortissimo fra due lati lunghi diventa lo spigolo vivo dove i due lati si incontrano
+    cambiato = True
+    while cambiato and len(pts) > 4:
+        cambiato = False
+        n = len(pts)
+        for i in range(n):
+            a0, a1, b0, b1 = pts[i - 1], pts[i], pts[(i + 1) % n], pts[(i + 2) % n]
+            if math.dist(a1, b0) >= 0.15 or math.dist(a0, a1) < 0.5 or math.dist(b0, b1) < 0.5:
+                continue
+            d1 = (a1[0] - a0[0], a1[1] - a0[1])
+            d2 = (b1[0] - b0[0], b1[1] - b0[1])
+            den = d1[0] * d2[1] - d1[1] * d2[0]
+            if abs(den) < 1e-9:
+                continue
+            t = ((b0[0] - a0[0]) * d2[1] - (b0[1] - a0[1]) * d2[0]) / den
+            x = (a0[0] + t * d1[0], a0[1] + t * d1[1])
+            if math.dist(x, a1) > 0.15 or math.dist(x, b0) > 0.15:
+                continue
+            pts[i] = x
+            pts.pop((i + 1) % n)
+            cambiato = True
+            break
+    return pts
+
+
+def _pulisci(g):
+    """Toglie i dentelli di pochi cm che l'unione dei muri lascia negli angoli: in prospetto diventerebbero
+    linee verticali senza significato. Gli spigoli veri restano."""
+    pols = []
+    for q in getattr(g, "geoms", [g]):
+        pols.append(Polygon(_togli_dentelli(list(q.exterior.coords)), [r for r in q.interiors]))
+    c = unary_union(pols)
+    return c if c.is_valid and not c.is_empty and abs(c.area - g.area) < 0.02 * g.area else g
+
+
 def _muri_del_lato(ed: Edificio, p0, p1):
     """Muri il cui contorno si sovrappone al lato p0-p1, con lunghezza di sovrapposizione."""
     lato = LineString([p0, p1])
     out = []
     for m in ed.muri:
-        sov = poligono_muro(ed, m).boundary.intersection(lato.buffer(1e-6)).length
-        if sov > 0.01:
+        sov = poligono_muro(ed, m).boundary.intersection(lato.buffer(0.07)).length  # anche dopo _pulisci
+        if sov > 0.05:
             out.append((sov, m))
     out.sort(key=lambda t: -t[0])
     return [m for _, m in out]
@@ -78,7 +151,8 @@ def _profilo_sommita(ed: Edificio, p0, p1, muri) -> tuple[list[tuple[float, floa
         inter = lato.intersection(Polygon(f.poligono).boundary)
         for g in getattr(inter, "geoms", [inter]):
             for c in getattr(g, "coords", []):
-                ss.append(float(np.dot(np.array(c) - p0, u)))
+                t = float(np.dot(np.array(c) - p0, u))
+                ss += [t - 2e-3, t, t + 2e-3]  # dove cambia la falda il salto resta verticale (oltre la tolleranza di 1 mm)
     ss = sorted({round(min(max(s, 0.0), L), 9) for s in ss})
     prof, ipotesi = [], False
     for s in ss:
@@ -177,7 +251,7 @@ def _dir(m):
 
 def facce(ed: Edificio) -> list[Faccia]:
     out: list[Faccia] = []
-    u = ingombro_muri(ed)
+    u = _pulisci(ingombro_muri(ed))
     z_ter = ed.quota_terreno.valore
     for tipo_anello, coords in _anelli(u):
         tipo = "parete_est" if tipo_anello == "est" else "parete_int"

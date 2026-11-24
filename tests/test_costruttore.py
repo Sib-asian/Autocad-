@@ -117,3 +117,14 @@ def test_testate_delle_falde_rivolte_verso_l_esterno():
         if f.tipo == "bordo_falda":
             c = f.pts.mean(axis=0)
             assert not falde[f.rif_id].contains(Point(c[0] + 0.01 * f.normale[0], c[1] + 0.01 * f.normale[1]))
+
+
+def test_contorno_senza_dentelli_negli_angoli():
+    """I dentelli di pochi cm lasciati dall'unione dei muri spariscono; gli spigoli veri restano."""
+    from rilievo.modello3d import _togli_dentelli
+    anello = [(11.0, -0.49), (11.0, 3.81), (11.033, 3.81), (11.033, 3.816), (11.056, 3.818), (11.033, 4.063),
+              (11.033, 4.31), (11.011, 4.31), (10.713, 7.548), (10.713, 7.62), (10.707, 7.62), (10.706, 7.627),
+              (10.635, 7.62), (6.03, 7.62), (6.03, 4.31), (-0.35, 4.31), (-0.35, -0.49), (11.0, -0.49)]
+    pulito = _togli_dentelli(anello)
+    assert len(pulito) == 7
+    assert (6.03, 4.31) in pulito and (-0.35, 4.31) in pulito  # il risalto vero del Vano 3 resta
