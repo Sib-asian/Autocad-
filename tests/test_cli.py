@@ -11,7 +11,7 @@ def test_cli_nuova_e_genera(tmp_path, monkeypatch):
     base = tmp_path / "pratiche" / "P001"
     assert (base / "modello" / "edificio.yaml").exists()
     salva(genera_caso(4), base / "modello" / "edificio.yaml")
-    assert main(["genera", str(base), "--no-dwg"]) == 0
+    assert main(["genera", str(base), "--no-dwg", "--pdf"]) == 0
     out = base / "output"
     assert (out / "P001.pdf").exists() and (out / "P001.dxf").exists()
     assert "Report di verifica" in (out / "verifica.md").read_text()
@@ -63,3 +63,16 @@ def test_cli_costruisci(tmp_path, monkeypatch):
     assert main(["costruisci", str(base)]) == 0
     from rilievo.modello import carica
     assert len(carica(base / "modello" / "edificio.yaml").aperture) == 10
+
+
+def test_cli_solo_pianta_senza_pdf(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    main(["nuova", "APE1"])
+    base = tmp_path / "pratiche" / "APE1"
+    salva(genera_caso(4), base / "modello" / "edificio.yaml")
+    assert main(["genera", str(base), "--no-dwg", "--tavole", "pianta"]) == 0
+    out = base / "output"
+    assert (out / "APE1.dxf").exists() and not (out / "APE1.pdf").exists()
+    import ezdxf
+    testi = [e.dxf.text for e in ezdxf.readfile(out / "APE1.dxf").modelspace().query("TEXT")]
+    assert any("TAV. 1 - PIANTA" in t for t in testi) and not any("PROSPETTI" in t for t in testi)

@@ -89,11 +89,12 @@ def cmd_genera(a) -> int:
             print(f"Letto lo stato {nome}: {f}")
     studio = _studio()
     try:
-        t = componi_tavole(ed, profilo=a.profilo, scala=a.scala, studio=studio, **altri)
+        tavole = {x.strip().lower() for x in a.tavole.split(",")} if a.tavole else None
+        t = componi_tavole(ed, profilo=a.profilo, scala=a.scala, studio=studio, tavole=tavole, **altri)
     except ValueError as e:
         print("Impossibile comporre le tavole:", e)
         return 2
-    out = esporta(t, base / "output", base.resolve().name, dwg=not a.no_dwg)
+    out = esporta(t, base / "output", base.resolve().name, dwg=not a.no_dwg, pdf=a.pdf)
     if ed.foto:
         from .genera.perizia import documentazione_fotografica_pdf
         out["foto"] = documentazione_fotografica_pdf(ed, base / "output" / "documentazione_fotografica.pdf",
@@ -285,6 +286,9 @@ def main(argv=None) -> int:
                                      "(se manca: il tipo scritto nel modello)")
     s.add_argument("--scala", type=int)
     s.add_argument("--no-dwg", action="store_true")
+    s.add_argument("--tavole", help="solo queste, separate da virgola: pianta, prospetti, sezioni, comparativa, "
+                                    "documentazione, quadro (se manca: tutte quelle del tipo di pratica)")
+    s.add_argument("--pdf", action="store_true", help="produce anche il PDF (di norma solo DWG)")
     s.set_defaults(f=cmd_genera)
     s = sp.add_parser("verifica", help="controlli automatici sul modello e sulle tavole")
     s.add_argument("pratica")

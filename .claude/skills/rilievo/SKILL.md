@@ -9,6 +9,22 @@ L'utente e' un tirocinante: parla in italiano semplice e spiega il *perche'* di 
 Lo strumento e' il pacchetto `rilievo` di questo repository (`rilievo --help`); il modello unico
 `pratiche/<codice>/modello/edificio.yaml` e' la sola fonte di verita': ogni tavola nasce da li'.
 
+## Cosa consegnare: lo decide l'utente, ogni volta
+
+- Fai solo le tavole che chiede: a volte solo la pianta (es. per un APE), a volte stato di fatto + progetto, a volte
+  prospetti e sezioni. `rilievo genera <pratica> --tavole pianta` (oppure `pianta,prospetti`, `sezioni`, ...).
+  Se la richiesta non e' chiara su cosa produrre, chiedi prima di disegnare.
+- Consegna di norma solo il **DWG, ordinato e pulito** (layer con nome, niente entita' inutili). Il PDF solo se lo
+  chiede (`--pdf`). Le anteprime PNG in `output/anteprime/` servono a te per controllare, non si consegnano.
+
+## Planimetrie catastali vecchie (anni '70 e simili)
+
+Disegni imprecisi: interpretali con buon senso da tecnico, non ricalcarli.
+- Una riga singola tra due locali e' un **tramezzo da 10 cm**: disegnalo con le due facce.
+- Le linee storte per l'imprecisione del disegno vanno **raddrizzate**: muri ortogonali e allineati, salvo
+  che la storpiatura sia reale (lo dicono le misure o le foto).
+- Ogni scelta interpretativa va nelle domande o tra le ipotesi; i casi dubbi si discutono con l'utente.
+
 ## Passi
 
 1. **Pratica.** `rilievo nuova <codice>`; copia gli input in `input/schizzi`, `input/dwg`, `input/foto`

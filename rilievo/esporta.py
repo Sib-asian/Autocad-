@@ -107,7 +107,8 @@ def esporta(tavole, cartella: str | Path, nome: str, dwg: bool = True, pdf: bool
             out["png"] = []
             for f in tavole.fogli:
                 _inquadra(fig, ax, f)
-                p = cartella / f"{nome}_tav{f.numero}.png"
+                (cartella / "anteprime").mkdir(exist_ok=True)
+                p = cartella / "anteprime" / f"{nome}_tav{f.numero}.png"
                 fig.savefig(p, dpi=110)
                 out["png"].append(p)
         plt.close(fig)

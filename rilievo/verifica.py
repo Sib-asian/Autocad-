@@ -148,6 +148,9 @@ def controlla_aperture(ed: Edificio) -> Controllo:
 
 
 def controlla_colmo(ed: Edificio, tavole) -> Controllo:
+    if not any(k in f.contenuto.lower() for f in tavole.fogli for k in ("prospett", "sezion")):
+        return Controllo("Quota di colmo", "il colmo deve essere alla stessa quota in tutte le viste", "-",
+                         "nessun prospetto o sezione richiesto", "OK")
     if not ed.falde:
         return Controllo("Quota di colmo", "il colmo deve essere alla stessa quota in tutte le viste", "-",
                          "nessuna copertura nel modello", "ATTENZIONE")

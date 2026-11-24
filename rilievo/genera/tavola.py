@@ -129,7 +129,7 @@ def _gruppi_stato(ed: Edificio, scala: int, nome: str, completo: bool = True):
 
 def componi_tavole(ed: Edificio, profilo: str | None = None, scala: int | None = None,
                    studio: dict | None = None, legittimo: Edificio | None = None,
-                   progetto: Edificio | None = None) -> Tavole:
+                   progetto: Edificio | None = None, tavole: set[str] | None = None) -> Tavole:
     """Tavole secondo il tipo di pratica.
 
     rilievo: pianta, prospetti, sezioni dello stato di fatto.
@@ -172,6 +172,12 @@ def componi_tavole(ed: Edificio, profilo: str | None = None, scala: int | None =
         if profilo == "perizia":
             from .perizia import gruppi_perizia
             gruppi += gruppi_perizia(ed, scala)
+
+    if tavole:  # solo le tavole richieste (es. {"pianta"} per un APE)
+        gruppi = [g for g in gruppi if any(k in g[0].lower() for k in tavole)]
+        if not gruppi:
+            raise ValueError(f"Nessuna tavola corrisponde a {sorted(tavole)} (pianta, prospetti, sezioni, comparativa, "
+                             "documentazione, quadro)")
 
     x_foglio = 0.0
     s = scala / 1000
