@@ -342,10 +342,8 @@ def _tipo_apertura(pa, pb, sp, finestre, archi, altri, f) -> str:
     for a, b, d in finestre:
         if np.linalg.norm((a + b) / 2 - mid) < 0.05:
             return "finestra"
-    for c, r, _ in archi:
-        if abs(r * f - w) < 0.15 * w + 0.05 and np.linalg.norm(c * f - pa) < w * 1.2 + sp:
-            return "porta"
-    # linee nel vano, parallele al muro: continue = finestra, tratteggiate = finestra alta sopra il taglio
+    # linee nel vano, parallele al muro e interne allo spessore: continue = finestra,
+    # tratteggiate = finestra alta (sopra il piano di taglio della pianta)
     u = (pb - pa) / max(w, 1e-9)
     n = np.array([-u[1], u[0]])
     nel_vano = []
@@ -354,10 +352,16 @@ def _tipo_apertura(pa, pb, sp, finestre, archi, altri, f) -> str:
             continue
         m = (s.a + s.b) / 2 * f
         t = float(np.dot(m - pa, u))
-        if 0.02 < t < w - 0.02 and abs(float(np.dot(m - pa, n))) <= sp / 2 + 0.02:
+        if 0.02 < t < w - 0.02 and abs(float(np.dot(m - pa, n))) < sp / 2 - 0.03:
             nel_vano.append(s)
     if nel_vano:
-        return "feritoia" if all(s.tratteggiata for s in nel_vano) else "finestra"
+        return "finestra_alta" if all(s.tratteggiata for s in nel_vano) else "finestra"
+    # arco di apertura con il centro su uno stipite: anta singola (raggio = luce) o doppia (meta')
+    for c, r, _ in archi:
+        rr = r * f
+        cern = min(np.linalg.norm(c * f - pa), np.linalg.norm(c * f - pb))
+        if cern < sp / 2 + 0.05 and (abs(rr - w) < 0.15 * w + 0.05 or abs(rr - w / 2) < 0.1 * w + 0.03):
+            return "porta"
     return "varco"
 
 
@@ -413,7 +417,7 @@ def bozza_modello(an: AnalisiDWG):
         s0, s1 = sorted((s0, s1))
         if ap.tipo == "porta" or ap.tipo == "varco":
             alt, dav = V(valore=2.10, fonte="ipotesi", nota="altezza tipica porta"), V(valore=0.0)
-        elif ap.tipo == "feritoia":
+        elif ap.tipo == "finestra_alta":
             alt = V(valore=0.40, fonte="ipotesi", nota="feritoia alta, da verificare")
             dav = V(valore=1.80, fonte="ipotesi", nota="feritoia alta, da verificare")
         else:
@@ -421,7 +425,7 @@ def bozza_modello(an: AnalisiDWG):
             dav = V(valore=0.90, fonte="ipotesi", nota="davanzale tipico")
         ed.aperture.append(Apertura(id=f"A{n}", muro=f"M{ap.muro + 1}", da=V(valore=round(s0, 3), fonte="dwg"),
                                     a=V(valore=round(s1, 3), fonte="dwg"), altezza=alt, davanzale=dav,
-                                    tipo=ap.tipo))
+                                    tipo="finestra" if ap.tipo == "finestra_alta" else ap.tipo))
     # locali: un testo "parola" dentro ogni spazio chiuso
     try:
         spazi = celle(ed)

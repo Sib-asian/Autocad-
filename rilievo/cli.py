@@ -182,12 +182,12 @@ def cmd_raddrizza(a) -> int:
     cv2.imwrite(dest, out)
     print(f"Distorsione k1 = {k1:.3f} ({metodo}); EXIF: {ex or 'assenti'}")
     print(f"Immagine raddrizzata ({ppm} px/m): {dest}")
-    from .foto.raddrizza import correggi_punti, pixel_a_facciata
+    from .foto.raddrizza import misura_con_incertezza
     extra = dati["punti_px"][4:]
     if extra:
-        q = pixel_a_facciata(H, correggi_punti(extra, K, k1))
-        for i, (x, z) in enumerate(q, start=5):
-            print(f"punto {i}: X = {x:.3f} m, Z = {z:.3f} m")
+        for i, r in enumerate(misura_con_incertezza(dati["punti_px"][:4], dati["punti_m"], extra, K, k1), start=5):
+            print(f"punto {i}: X = {r['X']:.3f} m, Z = {r['Z']:.3f} m  (incertezza +/- {r['incertezza_m'] * 100:.0f} cm)")
+        print("Le misure da foto entrano nel modello con fonte: foto e la loro incertezza nella nota.")
     return 0
 
 

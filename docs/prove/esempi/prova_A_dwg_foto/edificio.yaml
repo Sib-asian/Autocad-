@@ -1,0 +1,145 @@
+pratica: {codice: A2044, titolo: Prova A - DWG del collega + foto}
+muri:
+- id: M1
+  asse:
+  - [-0.275, -0.275]
+  - [9.275, -0.275]
+  spessore: {valore: 0.55, fonte: dwg, rif: layer MURI}
+- id: M2
+  asse:
+  - [-0.275, 4.875]
+  - [9.525000000000002, 4.875]
+  spessore: {valore: 0.55, fonte: dwg, rif: layer MURI}
+- id: M3
+  asse:
+  - [4.625, 7.924999999999999]
+  - [8.125, 7.924999999999999]
+  spessore: {valore: 0.25, fonte: dwg, rif: layer MURI}
+- id: M4
+  asse:
+  - [9.275, -0.275]
+  - [9.525, 4.875]
+  spessore: {valore: 0.55, fonte: dwg, rif: layer MURI}
+- id: M5
+  asse:
+  - [-0.275, -0.275]
+  - [-0.275, 4.875]
+  spessore: {valore: 0.55, fonte: dwg, rif: layer MURI}
+- id: M6
+  asse:
+  - [4.05, -0.275]
+  - [4.05, 4.875]
+  spessore: {valore: 0.3, fonte: dwg, rif: layer MURI}
+- id: M7
+  asse:
+  - [4.625, 4.875]
+  - [4.625, 7.924999999999999]
+  spessore: {valore: 0.25, fonte: dwg, rif: layer MURI}
+- id: M8
+  asse:
+  - [8.125, 4.875]
+  - [8.125, 7.924999999999999]
+  spessore: {valore: 0.25, fonte: dwg, rif: layer MURI}
+aperture:
+- id: A1
+  muro: M1
+  da: {valore: 1.325, fonte: dwg}
+  a: {valore: 2.325, fonte: dwg}
+  altezza: {valore: 2.25, rif: metro}
+  tipo: porta
+- id: A2
+  muro: M1
+  da: {valore: 2.925, fonte: dwg}
+  a: {valore: 3.675, fonte: dwg}
+  altezza: {valore: 0.84, fonte: foto, confidenza: 0.8, rif: foto_1_sud, nota: 'da foto, incertezza +/- 11 cm'}
+  davanzale: {valore: 1.06, fonte: foto, confidenza: 0.8, rif: foto_1_sud, nota: 'da foto, incertezza +/- 10 cm'}
+- id: A3
+  muro: M1
+  da: {valore: 7.925, fonte: dwg}
+  a: {valore: 8.875, fonte: dwg}
+  altezza: {valore: 2.5, fonte: ipotesi, nota: 'da foto, incertezza +/- 19 cm: misurare'}
+  tipo: porta
+  forma: arco
+- id: A4
+  muro: M2
+  da: {valore: 6.245, fonte: dwg}
+  a: {valore: 7.045, fonte: dwg}
+  altezza: {valore: 2.1, fonte: ipotesi, nota: altezza tipica porta}
+  tipo: porta
+- id: A5
+  muro: M3
+  da: {valore: 1.505, fonte: dwg}
+  a: {valore: 2.005, fonte: dwg}
+  altezza: {valore: 1.2, fonte: ipotesi, nota: altezza tipica finestra}
+  davanzale: {valore: 0.9, fonte: ipotesi, nota: davanzale tipico}
+- id: A6
+  muro: M5
+  da: {valore: 2.025, fonte: dwg}
+  a: {valore: 2.625, fonte: dwg}
+  altezza: {valore: 0.45, fonte: foto, confidenza: 0.8, rif: foto_4_ovest, nota: 'da foto, incertezza +/- 1 cm'}
+  davanzale: {valore: 1.61, fonte: foto, confidenza: 0.8, rif: foto_4_ovest, nota: 'da foto, incertezza +/- 1 cm'}
+- id: A7
+  muro: M6
+  da: {valore: 3.225, fonte: dwg}
+  a: {valore: 4.125, fonte: dwg}
+  altezza: {valore: 2.1, fonte: ipotesi, nota: altezza tipica porta}
+  tipo: porta
+locali:
+- id: L1
+  nome: forno
+  punto: [5.449999999999999, 7.199999999999999]
+  h_min: {valore: 2.7, fonte: ipotesi, nota: altezza non presente nel DWG}
+- id: L2
+  nome: CUCINA
+  punto: [1.95, 2.859999999999999]
+  h_min: {valore: 2.7, fonte: ipotesi, nota: altezza non presente nel DWG}
+- id: L3
+  nome: PALMENTO
+  punto: [6.5, 2.51]
+  h_min: {valore: 2.7, fonte: ipotesi, nota: altezza non presente nel DWG}
+falde:
+- id: T1
+  poligono:
+  - [-0.8, -0.8130103675019401]
+  - [10.06301036750194, -0.8130103675019401]
+  - [10.06301036750194, 2.29349481624903]
+  - [-0.8, 2.29349481624903]
+  quote:
+  - {valore: 3.265, fonte: ipotesi, nota: 'gronda e colmo da foto, spessore ipotizzato'}
+  - {valore: 3.265, fonte: ipotesi, nota: 'gronda e colmo da foto, spessore ipotizzato'}
+  - {valore: 4.32, fonte: ipotesi, nota: 'gronda e colmo da foto, spessore ipotizzato'}
+  - {valore: 4.32, fonte: ipotesi, nota: 'gronda e colmo da foto, spessore ipotizzato'}
+  spessore: {valore: 0.3, fonte: ipotesi, nota: ipotizzato}
+- id: T2
+  poligono:
+  - [-0.8, 2.29349481624903]
+  - [10.06301036750194, 2.29349481624903]
+  - [10.06301036750194, 5.4]
+  - [-0.8, 5.4]
+  quote:
+  - {valore: 4.32, fonte: ipotesi, nota: 'gronda e colmo da foto, spessore ipotizzato'}
+  - {valore: 4.32, fonte: ipotesi, nota: 'gronda e colmo da foto, spessore ipotizzato'}
+  - {valore: 3.265, fonte: ipotesi, nota: 'gronda e colmo da foto, spessore ipotizzato'}
+  - {valore: 3.265, fonte: ipotesi, nota: 'gronda e colmo da foto, spessore ipotizzato'}
+  spessore: {valore: 0.3, fonte: ipotesi, nota: ipotizzato}
+- id: T3
+  poligono:
+  - [4.425, 5.15]
+  - [8.325, 5.15]
+  - [8.325, 8.149999999999999]
+  - [4.425, 8.149999999999999]
+  quote:
+  - {valore: 2.9, fonte: ipotesi, nota: annesso non misurato}
+  - {valore: 2.9, fonte: ipotesi, nota: annesso non misurato}
+  - {valore: 2.45, fonte: ipotesi, nota: annesso non misurato}
+  - {valore: 2.45, fonte: ipotesi, nota: annesso non misurato}
+  spessore: {valore: 0.2, fonte: ipotesi, nota: ipotizzato}
+  struttura: travetti in legno
+sezioni:
+- nome: A
+  p0: [4.63150518375097, -1.5630103675019402]
+  p1: [4.63150518375097, 9.049999999999999]
+- nome: B
+  p0: [-1.55, 1.69349481624903]
+  p1: [10.81301036750194, 1.69349481624903]
+  verso: dx

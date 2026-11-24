@@ -1,0 +1,140 @@
+pratica: {codice: B2031, titolo: Prova B - lettura alla cieca dello schizzo}
+muri:
+- id: MS
+  asse:
+  - [-0.25, -0.25]
+  - [15.501374657277932, -0.25]
+  spessore: 0.5
+  materiale: pietra
+  zero: 0.25
+- id: ME
+  asse:
+  - [15.501374657277932, -0.25]
+  - [15.850124657277933, 4.25]
+  spessore: 0.5
+  materiale: pietra
+- id: MN
+  asse:
+  - [15.850124657277933, 4.25]
+  - [-0.25, 4.25]
+  spessore: 0.5
+  materiale: pietra
+  zero: 0.27012465727793256
+- id: MO
+  asse:
+  - [-0.25, 4.25]
+  - [-0.25, -0.25]
+  spessore: 0.5
+  materiale: pietra
+  zero: 0.25
+- id: MI1
+  asse:
+  - [4.725, -0.25]
+  - [4.725, 4.25]
+  spessore: 0.35
+  materiale: pietra
+  zero: 0.25
+- id: MI2
+  asse:
+  - [11.425, -0.25]
+  - [11.425, 4.25]
+  spessore: 0.35
+  materiale: pietra
+  zero: 0.25
+- id: AO
+  asse:
+  - [4.875, 4.25]
+  - [4.875, 7.075]
+  spessore: 0.25
+  materiale: blocchi
+- id: AN
+  asse:
+  - [4.875, 7.075]
+  - [8.825, 7.075]
+  spessore: 0.25
+  materiale: blocchi
+  zero: 0.125
+- id: AE
+  asse:
+  - [8.825, 7.075]
+  - [8.825, 4.25]
+  spessore: 0.25
+  materiale: blocchi
+aperture:
+- {id: P1, muro: MS, da: 1.0, a: 2.1, altezza: 2.3, tipo: porta, battente: doppio}
+- {id: F1, muro: MS, da: 2.7, a: 3.55, altezza: 0.75, davanzale: 1.05}
+- {id: P2, muro: MS, da: 6.9, a: 8.15, altezza: 2.4, tipo: porta, forma: arco, battente: doppio}
+- {id: F2, muro: MS, da: 8.75, a: 9.4, altezza: 0.7, davanzale: 1.25}
+- {id: P3, muro: MS, da: 13.7, a: 14.85, altezza: 2.25, tipo: porta, battente: doppio}
+- {id: FO, muro: MO, da: 2.2, a: 2.8, altezza: 0.45, davanzale: 1.6}
+- {id: PI1, muro: MI1, da: 1.5, a: 2.4, altezza: 2.05, tipo: porta, forma: arco}
+- {id: PI2, muro: MI2, da: 2.2, a: 3.1, altezza: 2.15, tipo: porta, forma: arco}
+- {id: PA, muro: MN, da: 8.35, a: 9.15, altezza: 1.8, tipo: porta}
+- {id: FA, muro: AN, da: 1.6, a: 2.1, altezza: 0.4, davanzale: 1.4}
+locali:
+- id: L1
+  nome: Deposito
+  punto: [2.2, 2.0]
+  h_min: 2.79
+  h_max: 3.55
+- id: L2
+  nome: Cucina
+  punto: [8.0, 2.0]
+  h_min: 2.79
+  h_max: 3.55
+- id: L3
+  nome: Ripostiglio
+  punto: [13.4, 2.0]
+  h_min: 2.79
+  h_max: 3.55
+- id: L4
+  nome: Forno
+  punto: [6.85, 5.725]
+  h_min: 1.96
+  h_max: 2.69
+falde:
+- id: T1
+  poligono:
+  - [-0.75, -0.75]
+  - [16.35012465727793, -0.75]
+  - [16.35012465727793, 2.0]
+  - [-0.75, 2.0]
+  quote:
+  - {valore: 2.805, fonte: ipotesi, nota: 'copertura da H min/H max: colmo e spessore da verificare'}
+  - {valore: 2.805, fonte: ipotesi, nota: 'copertura da H min/H max: colmo e spessore da verificare'}
+  - {valore: 3.85, fonte: ipotesi, nota: 'copertura da H min/H max: colmo e spessore da verificare'}
+  - {valore: 3.85, fonte: ipotesi, nota: 'copertura da H min/H max: colmo e spessore da verificare'}
+  spessore: 0.3
+- id: T2
+  poligono:
+  - [-0.75, 2.0]
+  - [16.35012465727793, 2.0]
+  - [16.35012465727793, 4.75]
+  - [-0.75, 4.75]
+  quote:
+  - {valore: 3.85, fonte: ipotesi, nota: 'copertura da H min/H max: colmo e spessore da verificare'}
+  - {valore: 3.85, fonte: ipotesi, nota: 'copertura da H min/H max: colmo e spessore da verificare'}
+  - {valore: 2.805, fonte: ipotesi, nota: 'copertura da H min/H max: colmo e spessore da verificare'}
+  - {valore: 2.805, fonte: ipotesi, nota: 'copertura da H min/H max: colmo e spessore da verificare'}
+  spessore: 0.3
+- id: T3
+  poligono:
+  - [4.75, 4.5]
+  - [8.95, 4.5]
+  - [8.95, 7.2]
+  - [4.75, 7.2]
+  quote:
+  - {valore: 2.89, fonte: ipotesi, nota: falda dell'annesso da H max/H min}
+  - {valore: 2.89, fonte: ipotesi, nota: falda dell'annesso da H max/H min}
+  - {valore: 2.086, fonte: ipotesi, nota: falda dell'annesso da H max/H min}
+  - {valore: 2.086, fonte: ipotesi, nota: falda dell'annesso da H max/H min}
+  spessore: 0.2
+  struttura: travetti in legno
+sezioni:
+- nome: A
+  p0: [8.0, -1.5]
+  p1: [8.0, 8.0]
+- nome: B
+  p0: [-1.5, 1.4]
+  p1: [17.5, 1.4]
+  verso: dx

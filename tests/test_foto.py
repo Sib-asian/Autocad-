@@ -65,3 +65,35 @@ def test_pagina_punti(foto, tmp_path):
     html = pagina_punti(p, tmp_path / "punti.html")
     testo = html.read_text()
     assert "<canvas" in testo and "data:image/jpeg;base64," in testo
+
+
+def test_scala_verticale_senza_altezze_note(foto):
+    """Con la camera nota (EXIF) bastano larghezze note: l'altezza della porta si ricava dalla foto."""
+    from rilievo.foto.raddrizza import scala_verticale
+    ed, info, _ = foto
+    K = np.array(info["K"])
+    ang = info["angoli_facciata_px"]
+    larg = max(x for x, _ in info["angoli_facciata_m"])
+    pid, ppx = next((k, v) for k, v in info["aperture_px"].items() if k.startswith("P"))
+    ap = next(a for a in ed.aperture if a.id == pid)
+    # coordinate X note dalla pianta; Z relative: 0 alla base, 1 = sommita' della porta (incognita)
+    P = np.array(ppx)
+    from rilievo.foto.raddrizza import correggi_punti, omografia_facciata
+    Hgt = omografia_facciata(correggi_punti(ang, K, info["k1"]), info["angoli_facciata_m"])
+    xs = cv2.perspectiveTransform(correggi_punti(P, K, info["k1"]).reshape(-1, 1, 2), Hgt).reshape(-1, 2)[:, 0]
+    punti_px = [ang[0], ang[1], ppx[2], ppx[3]]
+    punti_rel = [(0, 0), (larg, 0), (xs[2], 1.0), (xs[3], 1.0)]
+    s = scala_verticale(punti_px, punti_rel, K, info["k1"])
+    assert s == pytest.approx(ap.altezza.valore, abs=0.03)
+
+
+def test_incertezza_cresce_fuori_dal_riquadro(foto):
+    from rilievo.foto.raddrizza import misura_con_incertezza
+    ed, info, _ = foto
+    K = np.array(info["K"])
+    ang, m = info["angoli_facciata_px"], info["angoli_facciata_m"]
+    centro = np.mean(np.array(ang), axis=0)
+    fuori = np.array(ang[2]) + (np.array(ang[2]) - centro) * 0.8
+    r = misura_con_incertezza(ang, m, [centro.tolist(), fuori.tolist()], K, info["k1"], sigma_px=1.5)
+    assert r[0]["incertezza_m"] < r[1]["incertezza_m"]
+    assert r[0]["incertezza_m"] < 0.05

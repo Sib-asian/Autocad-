@@ -107,6 +107,64 @@ def omografia_facciata(punti_px, punti_m) -> np.ndarray:
     return H
 
 
+def scala_verticale(punti_px, punti_rel, K, k1: float = 0.0, lo: float = 0.2, hi: float = 20.0) -> float:
+    """Fattore s tale che Z reale = s * Z relativa, sapendo la camera (K) e le sole X reali.
+
+    Con la camera calibrata la vista di un piano e' K [r1 r2 t]: le due colonne devono essere
+    ortogonali e della stessa lunghezza solo quando le coordinate del piano sono in scala vera.
+    """
+    src = correggi_punti(punti_px, K, k1)
+    Ki = np.linalg.inv(np.asarray(K, float))
+    rel = np.asarray(punti_rel, float)
+
+    def costo(sz):
+        piano = np.column_stack([rel[:, 0], rel[:, 1] * sz])
+        H = omografia_facciata(piano, src)
+        M = Ki @ H
+        c1, c2 = M[:, 0], M[:, 1]
+        n1, n2 = np.linalg.norm(c1), np.linalg.norm(c2)
+        return ((n1 - n2) / (n1 + n2)) ** 2 + (float(c1 @ c2) / (n1 * n2)) ** 2
+
+    grid = np.geomspace(lo, hi, 400)
+    best = grid[int(np.argmin([costo(g) for g in grid]))]
+    a, b = best / 1.02, best * 1.02
+    for _ in range(60):  # sezione aurea
+        c, d = b - (b - a) / 1.618, a + (b - a) / 1.618
+        if costo(c) < costo(d):
+            b = d
+        else:
+            a = c
+    return float((a + b) / 2)
+
+
+def misura_con_incertezza(punti_px, punti_m, misure_px, K, k1: float = 0.0, sigma_px: float = 1.5,
+                          prove: int = 200, seme: int = 0) -> list[dict]:
+    """Coordinate di facciata (X, Z) dei punti misurati e loro incertezza (deviazione standard, m).
+
+    L'incertezza simula l'errore di clic (sigma_px pixel) sui punti noti e su quelli misurati: cresce
+    quando si misura lontano dal riquadro dei punti di riferimento.
+    """
+    rng = np.random.default_rng(seme)
+    rif = np.asarray(punti_px, float)
+    mis = np.asarray(misure_px, float).reshape(-1, 2)
+    H = omografia_facciata(correggi_punti(rif, K, k1), punti_m)
+    base = pixel_a_facciata(H, correggi_punti(mis, K, k1))
+    campioni = []
+    for _ in range(prove):
+        Hn = omografia_facciata(correggi_punti(rif + rng.normal(0, sigma_px, rif.shape), K, k1), punti_m)
+        campioni.append(pixel_a_facciata(Hn, correggi_punti(mis + rng.normal(0, sigma_px, mis.shape), K, k1)))
+    dev = np.linalg.norm(np.std(np.array(campioni), axis=0), axis=1)
+    return [{"X": float(x), "Z": float(z), "incertezza_m": float(d)} for (x, z), d in zip(base, dev)]
+
+
+def affina_punti(img, punti, raggio: int = 6):
+    """Sposta i punti cliccati sullo spigolo piu' vicino (precisione sotto il pixel)."""
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if img.ndim == 3 else img
+    pts = np.asarray(punti, np.float32).reshape(-1, 1, 2)
+    crit = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 40, 0.01)
+    return cv2.cornerSubPix(cv2.GaussianBlur(gray, (3, 3), 0), pts, (raggio, raggio), (-1, -1), crit).reshape(-1, 2)
+
+
 def pixel_a_facciata(H, pts_px) -> np.ndarray:
     return cv2.perspectiveTransform(np.asarray(pts_px, np.float64).reshape(-1, 1, 2), H).reshape(-1, 2)
 

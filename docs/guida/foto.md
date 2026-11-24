@@ -10,6 +10,11 @@
 - **Punti di scatto:** segna sulla pianta numero e direzione di ogni foto: servono per la tavola della
   documentazione fotografica.
 
+**Tre regole imparate dalle prove:**
+1. lo spigolo da cliccare e' dove cambia il piano del muro, non dove finisce il materiale;
+2. i 4 punti noti devono racchiudere cio' che vuoi misurare (dentro: 1-4 cm; fuori: decine di cm);
+3. misura sempre almeno un'altezza per facciata con il metro: la sola foto non basta.
+
 Come si misura da una foto: `rilievo punti foto.jpg` apre una pagina dove si cliccano i punti; poi
 `rilievo raddrizza foto.jpg punti.json` corregge la deformazione, raddrizza la facciata e da' le misure
 in metri. Vale solo per superfici piane: rientranze e sporgenze non si misurano cosi'.
