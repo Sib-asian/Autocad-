@@ -43,6 +43,31 @@ def _carica(pratica: Path):
     return carica(pratica / "modello" / "edificio.yaml")
 
 
+def cmd_costruisci(a) -> int:
+    """Dal rilievo descritto per locali (modello/rilievo.yaml) al modello completo (modello/edificio.yaml)."""
+    import yaml
+
+    from .costruttore import costruisci
+    from .modello import salva
+    base = Path(a.pratica)
+    src = base / "modello" / "rilievo.yaml"
+    if not src.exists():
+        print(f"Manca {src}: vedi l'esempio esempi/rilievo_caso_2031.yaml")
+        return 2
+    try:
+        ed = costruisci(yaml.safe_load(src.read_text(encoding="utf-8")))
+    except (ValueError, KeyError) as e:
+        print("Il rilievo ha un problema:", e)
+        return 2
+    err = ed.valida()
+    salva(ed, base / "modello" / "edificio.yaml")
+    print(f"Modello scritto: {len(ed.muri)} muri, {len(ed.aperture)} aperture, {len(ed.locali)} locali, "
+          f"{len(ed.falde)} falde, {len(ed.sezioni)} sezioni")
+    for e in err:
+        print("Da controllare:", e)
+    return 0 if not err else 1
+
+
 def cmd_genera(a) -> int:
     from .esporta import esporta
     from .genera.tavola import componi_tavole
@@ -253,6 +278,9 @@ def main(argv=None) -> int:
     s = sp.add_parser("nuova", help="crea la cartella di una nuova pratica")
     s.add_argument("codice")
     s.set_defaults(f=cmd_nuova)
+    s = sp.add_parser("costruisci", help="dal rilievo per locali (modello/rilievo.yaml) al modello completo")
+    s.add_argument("pratica")
+    s.set_defaults(f=cmd_costruisci)
     s = sp.add_parser("genera", help="disegna le tavole (DWG, PDF) e le verifica")
     s.add_argument("pratica")
     s.add_argument("--profilo", help="rilievo, sanatoria, cila, scia, permesso, progetto, perizia "

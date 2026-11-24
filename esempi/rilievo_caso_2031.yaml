@@ -1,0 +1,26 @@
+# Rilievo descritto come si misura (stesso caso della Prova B). Comando: rilievo costruisci <pratica>
+pratica: {codice: B2031, titolo: "Prova B - dal rilievo per locali"}
+spessori: {esterni: 0.50, interni: 0.35}   # misurati sulle porte
+locali:
+  - {nome: Deposito, larghezza: 4.55, profondita: 4.00, h_min: 2.79, h_max: 3.55}
+  - {nome: Cucina, a_destra_di: Deposito, larghezza: 6.35, profondita: 4.00, h_min: 2.79, h_max: 3.55}
+  - {nome: Ripostiglio, a_destra_di: Cucina, larghezza: 3.67, larghezza_nord: 3.98, profondita: 4.00,
+     h_min: 2.79, h_max: 3.55}
+  - {nome: Forno, sopra_di: Cucina, scostamento: 0.10, spessore_muro: 0.50, spessore_esterno: 0.25,
+     larghezza: 3.70, profondita: 2.45, h_min: 1.96, h_max: 2.69, materiale: blocchi}
+materiale: pietra
+aperture:   # progressive dal punto 0 (spigolo interno indicato da "dal"), come sullo schizzo
+  - {locale: Deposito, lato: sud, dal: ovest, da: 1.00, a: 2.10, altezza: 2.30, tipo: porta}
+  - {locale: Deposito, lato: sud, dal: ovest, da: 2.70, a: 3.55, altezza: 0.75, davanzale: 1.05}
+  - {locale: Deposito, lato: sud, dal: ovest, da: 6.90, a: 8.15, altezza: 2.40, tipo: porta, forma: arco}
+  - {locale: Deposito, lato: sud, dal: ovest, da: 8.75, a: 9.40, altezza: 0.70, davanzale: 1.25}
+  - {locale: Deposito, lato: sud, dal: ovest, da: 13.70, a: 14.85, altezza: 2.25, tipo: porta}
+  - {locale: Deposito, lato: ovest, dal: nord, da: 2.20, a: 2.80, altezza: 0.45, davanzale: 1.60}
+  - {locale: Cucina, lato: ovest, dal: sud, da: 1.50, a: 2.40, altezza: 2.05, tipo: porta, forma: arco}
+  - {locale: Ripostiglio, lato: ovest, dal: sud, da: 2.20, a: 3.10, altezza: 2.15, tipo: porta, forma: arco}
+  - {locale: Ripostiglio, lato: nord, dal: est, da: 8.35, a: 9.15, altezza: 1.80, tipo: porta}
+  - {locale: Forno, lato: nord, dal: ovest, da: 1.60, a: 2.10, altezza: 0.40, davanzale: 1.40}
+coperture:   # altezze all'intradosso, come H min / H max misurate dentro
+  - {locali: [Deposito, Cucina, Ripostiglio], tipo: capanna, colmo: x, h_imposta: 2.79, h_colmo: 3.55,
+     spessore: 0.30, sporto: 0.25}
+  - {locali: [Forno], tipo: una_falda, bassa: nord, h_alta: 2.69, h_bassa: 1.96, spessore: 0.20}

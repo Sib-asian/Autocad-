@@ -18,8 +18,10 @@ Senza ODA lo strumento produce comunque DXF e PDF (il DXF si apre in AutoCAD).
 
 ```bash
 rilievo nuova P001                 # crea pratiche/P001 con il modello vuoto
+rilievo costruisci pratiche/P001   # dal rilievo per locali (modello/rilievo.yaml) al modello completo
 rilievo analizza-dwg pianta.dwg    # bozza del modello da un DWG esistente
-rilievo genera pratiche/P001       # tavole DWG/PDF + verifica + registro ipotesi
+rilievo genera pratiche/P001       # tavole DWG/PDF + verifica + registro ipotesi (profilo dal tipo di pratica:
+                                   #   rilievo, sanatoria, cila, scia, permesso, progetto, perizia)
 rilievo scheda -                   # scheda di sopralluogo da stampare
 rilievo punti foto.jpg             # pagina per cliccare i punti su una foto
 rilievo raddrizza foto.jpg p.json  # raddrizza la facciata e misura

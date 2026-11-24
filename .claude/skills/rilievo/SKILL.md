@@ -21,9 +21,13 @@ Lo strumento e' il pacchetto `rilievo` di questo repository (`rilievo --help`); 
 3. **Domande.** Scrivi in `modello/domande.md` e in chat le domande numerate, raggruppate, ognuna con il motivo
    ("serve per..."). Ogni valore che resta incerto entra nel modello con `fonte: ipotesi` e una `nota`.
    Fatto quando non resta nessun dato inventato in silenzio.
-4. **Modello.** Completa `edificio.yaml` (schema: `rilievo/modello.py`). `rilievo verifica <pratica>` deve dare
-   "Dati del modello: OK". Aggiungi sempre almeno due `sezioni` (una trasversale al colmo, una longitudinale)
-   che passino per porte o finestre significative.
+4. **Modello.** Scrivi il rilievo per locali in `modello/rilievo.yaml` (come si misura: locali con dimensioni
+   interne e posizione reciproca, spessori, aperture con progressive dal punto 0, coperture con H min/H max;
+   esempio `esempi/rilievo_caso_2031.yaml`) e lancia `rilievo costruisci <pratica>`: muri, falde e sezioni
+   si calcolano da soli. Scrivi `edificio.yaml` a mano solo per forme che la descrizione per locali non copre
+   (schema: `rilievo/modello.py`). `rilievo verifica <pratica>` deve dare "Dati del modello: OK".
+   Pratiche con piu' stati: `legittimo.yaml` (sanatoria) o `progetto.yaml` (CILA/SCIA/permesso) accanto a
+   `edificio.yaml`, oppure `stato: demolire|nuovo` su muri e aperture; il tipo di pratica sceglie le tavole.
 5. **Tavole.** `rilievo genera <pratica>`. Apri i PNG in `output/` e guardali davvero: quote leggibili, nessuna
    scritta coperta, prospetti coerenti con le foto. Correggi e rigenera finche' il report e' senza ERRORE.
 6. **Consegna.** Invia DWG + PDF + `verifica.md` + `registro_ipotesi.md`. Nel messaggio: cosa c'e', i controlli

@@ -18,6 +18,8 @@ Obiettivo: ogni segno a penna diventa un dato del modello o una domanda. Lavora 
    - le progressive crescono e stanno dentro la lunghezza del muro;
    - la stessa porta vista dai due locali ha la stessa larghezza.
    Ogni incoerenza diventa una domanda con i due valori in conflitto.
-5. Costruisci il modello: fissa l'origine nello spigolo interno in basso a sinistra del primo locale; gli assi
-   stanno a meta' spessore fuori dalle facce interne; i muri storti si ricavano dalle due dimensioni del locale.
+5. Trascrivi in `modello/rilievo.yaml` (per locali, vedi `esempi/rilievo_caso_2031.yaml`): locali con
+   `larghezza`/`profondita` (e `larghezza_nord` se un lato e' storto), posizione con `a_destra_di`/`sopra_di`
+   e `scostamento`, aperture con `lato`, `dal` (punto 0) e progressive. Spessori non scritti: misurali sulla
+   stampa con la scala ricavata da una quota nota e mettili tra le domande. Poi `rilievo costruisci`.
    Fatto quando `rilievo verifica` passa e le superfici calcolate corrispondono alle dimensioni scritte (±1 cm).

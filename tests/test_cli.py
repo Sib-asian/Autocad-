@@ -51,3 +51,15 @@ def test_cli_sanatoria_con_legittimo(tmp_path, monkeypatch):
     (tmp_path / "config").mkdir()
     (tmp_path / "config" / "studio.yaml").write_text("tecnico: Ing. Prova\n")
     assert main(["genera", str(base), "--no-dwg"]) == 0
+
+
+def test_cli_costruisci(tmp_path, monkeypatch):
+    import shutil
+    esempio = Path(__file__).parents[1] / "esempi" / "rilievo_caso_2031.yaml"
+    monkeypatch.chdir(tmp_path)
+    main(["nuova", "C001"])
+    base = tmp_path / "pratiche" / "C001"
+    shutil.copy(esempio, base / "modello" / "rilievo.yaml")
+    assert main(["costruisci", str(base)]) == 0
+    from rilievo.modello import carica
+    assert len(carica(base / "modello" / "edificio.yaml").aperture) == 10
