@@ -136,7 +136,8 @@ def disegna_pianta(ed: Edificio, msp, scala: int = 50, origine=(0.0, 0.0), quote
     if ed.falde:
         tetto = unary_union([Polygon(f.poligono) for f in ed.falde])
         muri_pieni = unary_union(list(poligoni_muri(ed, con_aperture=False).values()))
-        if tetto.difference(muri_pieni.buffer(0.02)).area > 0.05 and not muri_pieni.buffer(0.02).contains(tetto):
+        sagoma = unary_union([Polygon(p.exterior) for p in _poligoni(muri_pieni)])
+        if tetto.difference(sagoma.buffer(0.02)).area > 0.05:
             for pol in _poligoni(tetto):
                 P.poly(pol.exterior.coords, "COPERTURA_PIANTA", chiusa=True)
 
