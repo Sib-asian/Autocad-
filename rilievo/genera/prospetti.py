@@ -17,7 +17,6 @@ from ..proiezione import Pezzo, assi_vista, proietta
 from .pianta import Ingombro, _Penna, _poligoni
 
 CARDINALI = ["NORD", "OVEST", "SUD", "EST"]
-PASSO_COPPI = 0.22
 
 
 @dataclass
@@ -105,10 +104,6 @@ def disegna_pezzi(ed, nome, sinistra, destra, pezzi: list[Pezzo], msp, scala, or
     for p in pezzi:
         if p.faccia.tipo == "infisso":
             _infisso(P, ed, p, lay_dett)
-    # --- manto di copertura (coppi): linee secondo la pendenza
-    for p in pezzi:
-        if p.faccia.tipo == "falda":
-            _coppi(P, p, lay_dett)
     # --- sagoma esterna spessa (solo prospetti)
     if tagliati is None:
         for pol in _poligoni(sil):
@@ -222,17 +217,6 @@ def _infisso(P: _Penna, ed: Edificio, p: Pezzo, layer):
                 xx = x0 + 0.05 + (w - 0.1) * i / n
                 for ln in _linee(LineString([(xx, z0), (xx, z1)]).intersection(telaio)):
                     P.poly(list(ln.coords), "PROSPETTI_DETTAGLI")
-
-
-def _coppi(P: _Penna, p: Pezzo, layer):
-    pol = p.poligono2d
-    x0, z0, x1, z1 = pol.bounds
-    xs = np.arange(x0 + PASSO_COPPI / 2, x1, PASSO_COPPI)
-    righe = MultiLineString([[(x, z0 - 1), (x, z1 + 1)] for x in xs]) if len(xs) else None
-    if righe is None:
-        return
-    for ln in _linee(righe.intersection(pol)):
-        P.poly(list(ln.coords), layer)
 
 
 def _faccia_verso(ed: Edificio, muro_id: str, vista: Vista) -> bool:

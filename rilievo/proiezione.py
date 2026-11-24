@@ -8,6 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+from shapely import set_precision
 from shapely.geometry import Polygon
 from shapely.ops import unary_union
 from shapely.validation import make_valid
@@ -70,6 +71,9 @@ def _poligono(f: Faccia, r, taglio) -> Polygon | None:
             pol = pol.difference(make_valid(Polygon(a_vista(h, r))))
     except Exception:
         return None
+    # coordinate su una griglia di 1e-6 m: valori quasi uguali (2,0063000000000017 / 2,006299999999958)
+    # fanno sbagliare le unioni e una parete smette di nascondere cio' che le sta dietro
+    pol = make_valid(set_precision(pol, 1e-6))
     if pol.is_empty or pol.area < 1e-8:
         return None
     return pol

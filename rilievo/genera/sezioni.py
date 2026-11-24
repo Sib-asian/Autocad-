@@ -126,56 +126,6 @@ def _dir_x(g: GeometriaSezione) -> np.ndarray:
     return u / k
 
 
-TRAVE_B, TRAVE_H, INTERASSE = 0.12, 0.16, 0.60  # schema dell'orditura se non rilevata
-MANTO, TAVOLATO = 0.05, 0.025
-
-
-@dataclass
-class Stratigrafia:
-    linee_manto: list  # LineString in coordinate di vista
-    travi_tagliate: list  # Polygon
-    travi_viste: list  # Polygon
-
-
-def stratigrafia_copertura(ed: Edificio, sez: LineaSezione) -> Stratigrafia:
-    """Manto, tavolato e travi dell'orditura (schematici) dove la sezione taglia le falde."""
-    from ..geometria import piano_falda
-    p0, u, v = direzione_sezione(sez)
-    _, r = assi_vista(v)
-    linea = LineString([tuple(p0 - u * 1000), tuple(p0 + u * 1000)])
-    out = Stratigrafia([], [], [])
-    for f in ed.falde:
-        sp = f.spessore.valore
-        a, b, _ = piano_falda(f)
-        grad = np.array([a, b])
-        for seg in _linee(Polygon(f.poligono).intersection(linea)):
-            (ax, ay), (bx, by) = seg.coords[0], seg.coords[-1]
-            xa = float(np.array([ax, ay, 0.0]) @ r)
-            xb = float(np.array([bx, by, 0.0]) @ r)
-            za, zb = z_falda(f, ax, ay), z_falda(f, bx, by)
-            if xb < xa:
-                xa, xb, za, zb = xb, xa, zb, za
-            if sp >= 0.12:
-                for d in (MANTO, MANTO + TAVOLATO):
-                    out.linee_manto.append(LineString([(xa, za - d), (xb, zb - d)]))
-            if "trav" not in f.struttura.lower():
-                continue
-            pend = float(np.linalg.norm(grad))
-            lungo_pendenza = pend > 1e-6 and abs(float(u @ grad) / pend) > 0.7
-            zi = lambda x: za - sp + (zb - za) * (x - xa) / (xb - xa) if xb > xa else za - sp
-            if lungo_pendenza:
-                out.travi_viste.append(Polygon([(xa, zi(xa)), (xb, zi(xb)), (xb, zi(xb) - TRAVE_H),
-                                                (xa, zi(xa) - TRAVE_H)]))
-            else:
-                x = xa + INTERASSE / 2
-                while x + TRAVE_B / 2 <= xb:
-                    z = zi(x)
-                    out.travi_tagliate.append(Polygon([(x - TRAVE_B / 2, z - TRAVE_H), (x + TRAVE_B / 2, z - TRAVE_H),
-                                                       (x + TRAVE_B / 2, z), (x - TRAVE_B / 2, z)]))
-                    x += INTERASSE
-    return out
-
-
 def altezza_media(ed: Edificio, loc, passo: float = 0.05) -> float | None:
     """Altezza media ponderata (volume / superficie) dall'intradosso della copertura."""
     pl = poligono_locale(ed, loc)
@@ -251,26 +201,5 @@ def disegna_sezione(ed: Edificio, sez: LineaSezione, msp, scala: int = 50, origi
         for i, rg in enumerate(righe):
             testo(msp, rg, T((xa + 0.6 * (xb - xa), zp + mm(14, sc) - i * mm(4, sc))), 2.2 if i else 2.6, sc,
                   "TESTI", "MIDDLE_CENTER")
-    st = stratigrafia_copertura(ed, sez)
-    for ln in st.linee_manto:
-        msp.add_lwpolyline([T(q) for q in ln.coords], dxfattribs={"layer": "SEZ_VISTO"})
-    for pol in st.travi_tagliate:
-        msp.add_lwpolyline([T(q) for q in pol.exterior.coords], close=True, dxfattribs={"layer": "SEZ_TAGLIATO"})
-        h = msp.add_hatch(dxfattribs={"layer": "SEZ_TRATTEGGI"})
-        h.set_pattern_fill("ANSI32", scale=sc / 1000 * 0.3)
-        h.paths.add_polyline_path([T(q) for q in pol.exterior.coords[:-1]], is_closed=True)
-    for pol in st.travi_viste:
-        msp.add_lwpolyline([T(q) for q in pol.exterior.coords], close=True, dxfattribs={"layer": "SEZ_VISTO"})
-    for f in ed.falde:
-        if any(t.tipo == "falda" and t.rif == f.id for t in g.tagliati):
-            t = next(t for t in g.tagliati if t.tipo == "falda" and t.rif == f.id)
-            x0, z0, x1, z1 = t.poligono.bounds
-            testo(msp, f"{f.manto} su {f.struttura}", T(((x0 + x1) / 2, z1 + mm(4, sc))), 1.8, sc, "NOTE")
-            break
     miny = ing0.miny
-    if st.travi_tagliate or st.travi_viste:
-        nota = (f"Orditura del tetto schematica: travi {round(TRAVE_B * 100)}x{round(TRAVE_H * 100)} cm ogni "
-                f"{fmt(INTERASSE)} m, da rilevare.")
-        miny = ing0.miny - mm(7, sc)
-        testo(msp, nota, ((ing0.minx + ing0.maxx) / 2, ing0.miny - mm(3, sc)), 1.8, sc, "NOTE")
     return Ingombro(ing0.minx, miny, ing0.maxx, ing0.maxy)

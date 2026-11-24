@@ -155,7 +155,7 @@ def z_falda(f: Falda, x: float, y: float) -> float:
 def quota_intradosso(ed: Edificio, x: float, y: float) -> float | None:
     """Quota dell'intradosso della copertura sopra il punto (max tra le falde che lo coprono)."""
     pt = Point(x, y)
-    zs = [z_falda(f, x, y) - f.spessore.valore for f in ed.falde if Polygon(f.poligono).buffer(1e-6).covers(pt)]
+    zs = [z_falda(f, x, y) - f.spessore.valore for f in ed.falde if Polygon(f.poligono).buffer(1e-3).covers(pt)]  # 1 mm: i vertici delle falde sono arrotondati
     return max(zs) if zs else None
 
 

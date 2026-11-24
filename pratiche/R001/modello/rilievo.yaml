@@ -38,20 +38,14 @@ aperture:
   - {locale: Vano 3, lato: nord, dal: ovest, da: 2.39, a: 2.79, tipo: finestra,
      altezza: {valore: 0.40, fonte: ipotesi, nota: "foto 10"},
      davanzale: {valore: 1.40, fonte: ipotesi, nota: "foto 10"}}
-coperture:   # altezze all'intradosso dell'utente; forma dalle foto; spessore e sporto stimati
-  # Vano 1 a una falda verso ovest (foto 11, 19, 1, 2: muri sud e nord con sommita' che sale verso est),
-  # appoggiata al timpano ovest del Vano 2 (foto 12-13)
-  - {locali: [Vano 1], tipo: una_falda, bassa: ovest, h_alta: 3.80, h_bassa: 2.10, spessore: 0.30, sporto: 0.15,
-     si_appoggia_a: [Vano 2], ipotesi: "spessore del tetto (0,30) e sporto (0,15) stimati dalle foto"}
-  # Vano 2 a capanna con colmo est-ovest (foto 12-13: gronda a sud; foto 14-15: timpano est in pietra con
-  # pinnacolo, a filo muro: niente sporto sui timpani)
-  - {locali: [Vano 2], tipo: capanna, colmo: x, h_imposta: 3.00, h_colmo: 3.80, spessore: 0.30, sporto: 0.15,
-     sporto_timpani: 0.0, ipotesi: "spessore del tetto (0,30) e sporto di gronda (0,15) stimati dalle foto"}
-  # Vano 3 a una falda verso nord appoggiata al muro nord del Vano 2: nelle foto 15-16 la sommita' del muro
-  # in blocchi prosegue la falda del Vano 2 senza gradino e senza sporto laterale -> manto sottile (0,10)
-  - {locali: [Vano 3], tipo: una_falda, bassa: nord, h_alta: 3.00, h_bassa: 2.05, spessore: 0.10, sporto: 0.10,
-     sporto_timpani: 0.0, si_appoggia_a: [Vano 2],
-     ipotesi: "spessore del tetto (0,10) e sporto di gronda (0,10) stimati dalle foto"}
-sezioni:   # A: lungo la falda del Vano 1 e attraverso la capanna del Vano 2; B: Vano 2 -> Vano 3 dalla porta H 1,80
+coperture:   # come scritte nella pianta GRAFICO.dwg: H min sul lato basso, H max sul lato alto.
+  # Dove due tetti si incontrano, il piu' alto poggia sul muro in comune e il piu' basso si ferma contro.
+  - {locali: [Vano 1], tipo: una_falda, bassa: ovest, h_alta: 3.80, h_bassa: 2.10, spessore: 0.25, sporto: 0.0,
+     ipotesi: "spessore del tetto (0,25) stimato"}
+  - {locali: [Vano 2], tipo: una_falda, bassa: sud, h_alta: 3.80, h_bassa: 3.00, spessore: 0.25, sporto: 0.0,
+     ipotesi: "spessore del tetto (0,25) stimato"}
+  - {locali: [Vano 3], tipo: una_falda, bassa: nord, h_alta: 3.00, h_bassa: 2.05, spessore: 0.25, sporto: 0.0,
+     ipotesi: "spessore del tetto (0,25) stimato"}
+sezioni:   # A: lungo le falde del Vano 1 e del Vano 2; B: Vano 2 -> Vano 3 attraverso la porta H 1,80
   - {nome: A, p0: [-1.5, 1.9], p1: [12.0, 1.9], verso: sx}
   - {nome: B, p0: [9.2, -1.5], p1: [9.2, 9.0], verso: sx}

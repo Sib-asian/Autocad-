@@ -240,10 +240,21 @@ def _semipiano(a, b, verso_b: bool):
               (a.x - G * tx + G * nx, a.y - G * ty + G * ny), (a.x - G * tx, a.y - G * ty)])
 
 
+def _affaccio(a, b, p1, p2) -> float:
+    """Lunghezza per cui due locali si fronteggiano attraverso il muro che li separa (0 se solo d'angolo)."""
+    import numpy as np
+    n = np.array([p2.x - p1.x, p2.y - p1.y])
+    n = n / (np.linalg.norm(n) or 1.0)
+    t = np.array([-n[1], n[0]])
+    pa = [float(np.dot(c, t)) for c in np.array(a.exterior.coords if a.geom_type == "Polygon" else a.convex_hull.exterior.coords)]
+    pb = [float(np.dot(c, t)) for c in np.array(b.exterior.coords)]
+    return max(0.0, min(max(pa), max(pb)) - max(min(pa), min(pb)))
+
+
 def _coperture(dati: dict, locali: dict[str, _Locale]) -> list[Falda]:
     """Falde: ogni copertura copre i propri locali con i loro muri e sporge verso l'esterno. Dove due
-    coperture si incontrano, la piu' alta copre il muro in comune (e sporge sopra l'altra), la piu' bassa
-    si ferma contro il muro; con si_appoggia_a la piu' alta non sporge sopra quella appoggiata.
+    coperture si incontrano, la piu' alta copre il muro in comune (senza sporgere sopra l'altra), la piu'
+    bassa si ferma contro il muro; si_appoggia_a forza la seconda soluzione anche se i numeri dicono altro.
     sporto_timpani fissa lo sporto sui timpani e sulle testate delle falde, diverso da quello di gronda."""
     from shapely.ops import nearest_points
     gruppi = []
@@ -273,18 +284,23 @@ def _coperture(dati: dict, locali: dict[str, _Locale]) -> list[Falda]:
                 if gap >= 1.0:
                     continue
                 p1, p2 = nearest_points(stanze, o.pol)
-                mx, my = (p1.x + p2.x) / 2, (p1.y + p2.y) / 2
-                if ci_appoggia:
-                    # l'altra copertura si appoggia al nostro muro: lo copriamo noi, ma non sporgiamo sopra di
-                    # lei (il manto prosegue senza gradino, come nelle foto). Il confine e' la faccia del muro
-                    # dalla sua parte.
+                # quote confrontate a meta' del muro in comune (non in un punto qualsiasi del suo bordo)
+                zona = stanze.buffer(gap + 1e-3, join_style="mitre").intersection(
+                    o.pol.buffer(gap + 1e-3, join_style="mitre")).difference(stanze).difference(o.pol)
+                if gap > 1e-3 and _affaccio(stanze, o.pol, p1, p2) < 0.30:
+                    continue  # si toccano solo in un angolo: nessun muro in comune
+                cm = zona.centroid if not zona.is_empty else None
+                mx, my = (cm.x, cm.y) if cm is not None else ((p1.x + p2.x) / 2, (p1.y + p2.y) / 2)
+                appoggio = o.nome in c.get("si_appoggia_a", [])  # indicato nel rilievo (es. dalle foto)
+                if ci_appoggia or (not appoggio and z(mx, my) > z2(mx, my) + 1e-6):
+                    # siamo piu' alti (o l'altra si appoggia a noi): copriamo il muro in comune fino alla sua
+                    # faccia dall'altra parte, senza sporgere sopra l'altra copertura
                     lato_suo = _semipiano(p2, p1, verso_b=False)
                     if lato_suo is not None:
                         sp2 = float(c2.get("sporto", 0.0)) + 0.01
                         base = base.difference(lato_suo.intersection(
                             _contorno_esterno(o).buffer(sp2, join_style="mitre")))
                     continue
-                appoggio = o.nome in c.get("si_appoggia_a", [])  # indicato nel rilievo (es. dalle foto)
                 if appoggio or z(mx, my) < z2(mx, my) - 1e-6:  # piu' bassi o in appoggio: ci fermiamo al muro
                     lato_nostro = _semipiano(p1, p2, verso_b=False)
                     if lato_nostro is not None:  # fino alla faccia del muro dalla nostra parte, gronde comprese

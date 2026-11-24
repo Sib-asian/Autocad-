@@ -89,9 +89,25 @@ def _profilo_sommita(ed: Edificio, p0, p1, muri) -> tuple[list[tuple[float, floa
         else:
             z = quota_intradosso(ed, x, y)
             if z is None:
+                z = _intradosso_vicino(ed, x, y)
+            if z is None:
                 z, ipotesi = ALTEZZA_DI_RISERVA, True
         prof.append((float(s), float(z)))
     return _semplifica(prof), ipotesi or any(q.ipotesi for f in ed.falde for q in f.quote)
+
+
+def _intradosso_vicino(ed: Edificio, x: float, y: float, raggio: float = 0.30) -> float | None:
+    """Intradosso della falda piu' vicina, se il punto ne resta fuori di pochi centimetri (spigoli dei muri)."""
+    from shapely.geometry import Point
+    from shapely.ops import nearest_points
+    pt = Point(x, y)
+    vicine = [(Polygon(f.poligono).distance(pt), f) for f in ed.falde]
+    vicine = [(d, f) for d, f in vicine if d <= raggio]
+    if not vicine:
+        return None
+    _, f = min(vicine, key=lambda t: t[0])
+    q = nearest_points(Polygon(f.poligono), pt)[0]
+    return z_falda(f, q.x, q.y) - f.spessore.valore
 
 
 def _semplifica(prof, tol=1e-4):
