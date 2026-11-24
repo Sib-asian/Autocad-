@@ -153,36 +153,60 @@ def _cornice_e_cartiglio(ed, msp, o, W, H, scala, n, contenuto, formato, studio)
         y = y_b
 
 
+def _griglia(P, x0, y_top, col, dati, s, hr=6, evidenzia=None):
+    """Tabella a griglia: col = [(intestazione, larghezza mm)], dati = righe di testi."""
+    W = sum(c[1] for c in col)
+    Ht = hr * len(dati)
+    for i, riga in enumerate(dati):
+        yb = y_top - (i + 1) * hr * s
+        P.poly([(x0, yb), (x0 + W * s, yb)], "NOTE")
+        x = 0
+        for (_, w), val in zip(col, riga):
+            lay = "IPOTESI_DA_VERIFICARE" if evidenzia and evidenzia(val) else "TESTI"
+            P.testo(str(val), (x0 + (x + 1.2) * s, yb + hr / 2 * s), 1.9, lay, "MIDDLE_LEFT")
+            x += w
+    P.poly([(x0, y_top), (x0 + W * s, y_top)], "NOTE")
+    x = 0
+    for _, w in col + [("", 0)]:
+        P.poly([(x0 + x * s, y_top - Ht * s), (x0 + x * s, y_top)], "NOTE")
+        x += w
+    return Ht
+
+
 def _tabella(ed: Edificio, msp, o, scala) -> Ingombro:
+    from .tabelle import dati_generali
     righe, tot = tabella_superfici(ed)
     P = _Penna(msp, o, scala)
     s = scala / 1000
-    col = [("Locale", 42), ("S (m²)", 18), ("h min", 15), ("h max", 15), ("h media", 17), ("V (m³)", 20),
-           ("S fin. min (S/8)", 26)]
-    hr = 6
-    W = sum(c[1] for c in col)
+    col = [("Locale", 34), ("Uso", 24), ("S (m²)", 15), ("h min", 12), ("h max", 12), ("h media", 14),
+           ("V (m³)", 16), ("S fin.", 13), ("S/8", 12), ("1/8", 10), ("h", 10)]
     dati = [[c[0] for c in col]]
     for r in righe:
-        dati.append([r.nome + (" (*)" if r.ipotesi else ""), fmt(r.superficie), fmt(r.h_min),
+        dati.append([r.nome + (" (*)" if r.ipotesi else ""), r.categoria, fmt(r.superficie), fmt(r.h_min),
                      fmt(r.h_max) if r.h_max is not None else "-", fmt(r.h_media) if r.h_media else "-",
-                     fmt(r.volume) if r.volume is not None else "-", fmt(r.rai_minimo)])
-    dati.append(["TOTALE", fmt(tot.superficie), "", "", "", fmt(tot.volume), fmt(tot.rai_minimo)])
-    Ht = hr * len(dati)
-    P.testo("TABELLA SUPERFICI E ALTEZZE", (0, (Ht + 4) * s), 3.0, "TESTI", "BOTTOM_LEFT")
-    for i, riga in enumerate(dati):
-        yb = (Ht - (i + 1) * hr) * s
-        P.poly([(0, yb), (W * s, yb)], "NOTE")
-        x = 0
-        for (nome, w), val in zip(col, riga):
-            P.testo(str(val), ((x + 1.5) * s, yb + hr / 2 * s), 2.0, "TESTI", "MIDDLE_LEFT")
-            x += w
-    P.poly([(0, Ht * s), (W * s, Ht * s)], "NOTE")
-    x = 0
-    for _, w in col + [("", 0)]:
-        P.poly([(x * s, 0), (x * s, Ht * s)], "NOTE")
-        x += w
-    P.testo("Rapporto aeroilluminante: superficie finestrata apribile >= 1/8 della superficie del pavimento "
-            "(D.M. 5/7/1975 per i locali di abitazione).", (0, -4 * s), 1.6, "NOTE", "TOP_LEFT")
+                     fmt(r.volume) if r.volume is not None else "-", fmt(r.s_finestrata), fmt(r.rai_minimo),
+                     r.esito_rai, r.esito_h])
+    dati.append(["TOTALE", "", fmt(tot.superficie), "", "", "", fmt(tot.volume), fmt(tot.s_finestrata), "", "", ""])
+    dg = dati_generali(ed)
+    gen = [["Dato", "Valore"], ["Superficie lorda (v.p.p.)", f"{fmt(dg.superficie_lorda)} m²"],
+           ["Superficie coperta", f"{fmt(dg.superficie_coperta)} m²"],
+           ["Volume vuoto per pieno (fino all'estradosso)", f"{fmt(dg.volume_vpp)} m³"],
+           ["Superficie utile residenziale (SU)", f"{fmt(dg.su)} m²"],
+           ["Superficie non residenziale (SNR)", f"{fmt(dg.snr)} m²"]]
+    alt_gen = 6 * len(gen)
+    alt_tab = 6 * len(dati)
+    top = (alt_tab + alt_gen + 22) * s
+    P.testo("TABELLA SUPERFICI, ALTEZZE E VERIFICHE", (0, top + 4 * s), 3.0, "TESTI", "BOTTOM_LEFT")
+    _griglia(P, 0, top, col, dati, s, evidenzia=lambda v: v == "NO")
+    y2 = top - (alt_tab + 10) * s
+    P.testo("DATI GENERALI", (0, y2 + 3 * s), 2.6, "TESTI", "BOTTOM_LEFT")
+    _griglia(P, 0, y2, [("Dato", 80), ("Valore", 30)], gen, s)
+    note = ["S fin. = superficie delle finestre esterne del locale; S/8 = minimo richiesto (D.M. 5/7/1975, locali "
+            "abitabili). h: minimo 2,70 abitabili, 2,40 accessori (altezza media).",
+            "n.r. = verifica non richiesta per l'uso del locale. Norme regionali, regolamento edilizio e D.L. 69/2024 "
+            "possono prevedere valori diversi: verificare. Volume e superfici secondo le definizioni del Comune."]
+    for i, t in enumerate(note):
+        P.testo(t, (0, y2 - (alt_gen + 4 + i * 3.5) * s), 1.6, "NOTE", "TOP_LEFT")
     return Ingombro.da_entita(P.ent)
 
 

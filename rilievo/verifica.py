@@ -172,6 +172,19 @@ def controlla_ipotesi(ed: Edificio, tavole) -> Controllo:
                      esito, [f"{o}: {c} = {v.valore:.2f} ({v.nota or 'da verificare'})" for o, c, v in ipo])
 
 
+def controlla_requisiti(ed: Edificio) -> Controllo:
+    from .genera.tabelle import tabella_superfici
+    righe, _ = tabella_superfici(ed)
+    no = [f"{r.nome}: " + ", ".join(x for x in (
+        f"finestre {r.s_finestrata} m² < {r.rai_minimo} m² (1/8)" if r.esito_rai == "NO" else "",
+        f"altezza media {r.h_media} < {r.h_richiesta}" if r.esito_h == "NO" else "") if x) for r in righe
+          if "NO" in (r.esito_rai, r.esito_h)]
+    controllati = sum(1 for r in righe if r.esito_rai != "n.r." or r.esito_h != "n.r.")
+    return Controllo("Requisiti igienico-sanitari", "i locali abitabili devono avere finestre >= 1/8 e altezza minima",
+                     "tutti OK", f"{controllati} locali verificati, {len(no)} non conformi",
+                     "ATTENZIONE" if no else "OK", no)
+
+
 def verifica(ed: Edificio, tavole, dwg=None) -> Report:
     rep = Report()
     err = ed.valida()
@@ -180,6 +193,8 @@ def verifica(ed: Edificio, tavole, dwg=None) -> Report:
     rep.righe.append(controlla_catene(tavole.doc))
     rep.righe.append(controlla_aperture(ed))
     rep.righe.append(controlla_colmo(ed, tavole))
+    if ed.locali:
+        rep.righe.append(controlla_requisiti(ed))
     sov = testi_sovrapposti(tavole.doc)
     rep.righe.append(Controllo("Testi sovrapposti", "una scritta coperta da un'altra non si legge in stampa",
                                "0", str(len(sov)), "ATTENZIONE" if sov else "OK", sov))

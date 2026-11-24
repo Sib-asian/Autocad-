@@ -57,3 +57,11 @@ def test_note_raggruppate():
         "quote": [{"valore": 3, "fonte": "ipotesi", "nota": "da verificare"}] * 3}]})
     righe = righe_note(ed)
     assert len([r for r in righe if r.startswith("T1")]) == 1
+
+
+def test_requisiti_segnalati(ed_scatola):
+    ed = ed_scatola.model_copy(deep=True)
+    ed.locali[0] = ed.locali[0].model_copy(update={"nome": "Cucina"})
+    rep = verifica(ed, componi_tavole(ed))
+    riga = [c for c in rep.righe if c.nome == "Requisiti igienico-sanitari"][0]
+    assert riga.esito == "ATTENZIONE" and "Cucina" in riga.dettagli[0]
