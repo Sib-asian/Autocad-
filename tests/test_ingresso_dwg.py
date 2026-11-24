@@ -62,3 +62,17 @@ def test_da_dwg_vero(ed_scatola, tmp_path):
     from rilievo.ingresso.dwg import leggi_dwg
     dwg = dxf_a_dwg(_pianta_dxf(ed_scatola, tmp_path), tmp_path / "pianta.dwg")
     _confronta(ed_scatola, bozza_modello(analizza_pianta(leggi_dwg(dwg))))
+
+
+def test_muro_spesso_con_pilastrini_corti(tmp_path):
+    """Muro da 55 cm con tratti pieni di 50-60 cm tra le aperture e un tramezzo innestato (caso del banco 2044)."""
+    from rilievo.banco.caso import genera_caso
+    from rilievo.banco.confronta import confronta
+    ed = genera_caso(2044)
+    doc = nuovo_documento(50)
+    disegna_pianta(ed, doc.modelspace(), 50, quote=False)
+    bozza = bozza_modello(analizza_pianta(doc))
+    r = confronta(ed, bozza)
+    assert not r.mancanti and not r.in_piu, (r.mancanti, r.in_piu)
+    piano = [x for x in r.righe if "estremo" in x.grandezza or x.grandezza in ("spessore", "posizione asse")]
+    assert max(x.errore_cm for x in piano) <= 1.0

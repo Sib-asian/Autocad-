@@ -20,7 +20,7 @@ SP_MIN, SP_MAX = 0.08, 0.90
 GAP_MIN, GAP_MAX = 0.35, 3.2
 TOL_ANG = math.radians(0.5)
 STRATI_MURO = re.compile(r"mur|wall|paret|tramez", re.I)
-STRATI_ESCLUSI = re.compile(r"quot|dim|testi|text|retin|hatch|arred|cartigl|cornice|sez_|linee_sez|nord", re.I)
+STRATI_ESCLUSI = re.compile(r"quot|dim|testi|text|retin|hatch|arred|cartigl|cornice|sez_|linee_sez|nord|copert|tetto|roof|falda", re.I)
 
 
 @dataclass(eq=False)
@@ -120,7 +120,7 @@ def _raccogli(doc):
     return segs, archi, testi
 
 
-def _coppie(segs: list[Seg], fattore: float, sp_min=SP_MIN, sp_max=SP_MAX):
+def _coppie(segs: list[Seg], fattore: float, sp_min=SP_MIN, sp_max=SP_MAX, rapporto=1.2, ov_min=0.2):
     """Coppie di segmenti paralleli a distanza da muro. Ritorna (i, j, distanza, s0, s1, u, n, c)."""
     out = []
     ang = [math.atan2(s.u[1], s.u[0]) % math.pi for s in segs]
@@ -143,7 +143,7 @@ def _coppie(segs: list[Seg], fattore: float, sp_min=SP_MIN, sp_max=SP_MAX):
             pj = sorted([float(np.dot(sj.a - si.a, u)), float(np.dot(sj.b - si.a, u))])
             s0, s1 = max(pi[0], pj[0]), min(pi[1], pj[1])
             ov = (s1 - s0) * fattore
-            if ov < 0.2 or ov < 1.2 * abs(dist):
+            if ov < ov_min or ov < rapporto * abs(dist):
                 continue
             out.append((i, j, abs(dist), s0, s1, u, n * np.sign(dist), si.a))
     return out
@@ -177,6 +177,13 @@ def analizza_pianta(doc) -> AnalisiDWG:
         a = (c + u * s0) * f + n * dist / 2
         b = (c + u * s1) * f + n * dist / 2
         cand.append((a, b, dist, segs_muro[i].layer))
+    # secondo passaggio: pilastrini corti tra le aperture, solo sulle linee dei muri gia' trovati
+    linee = [(a, b, d) for a, b, d, _ in cand]
+    for i, j, dist, s0, s1, u, n, c in _coppie(segs_muro, f, rapporto=0.0, ov_min=0.15):
+        a = (c + u * s0) * f + n * dist / 2
+        b = (c + u * s1) * f + n * dist / 2
+        if any(_sulla_stessa_retta((a, b, dist, ""), (la, lb, ld, "")) for la, lb, ld in linee):
+            cand.append((a, b, dist, segs_muro[i].layer))
     cand = _togli_doppioni(cand)
     # se un candidato ha linee interne parallele (vetro) e' una finestra disegnata nel vano
     muri, finestre = [], []
@@ -188,10 +195,15 @@ def analizza_pianta(doc) -> AnalisiDWG:
             muri.append([a, b, dist, lay])
 
     # --- unione dei tratti collineari: le interruzioni sono aperture
-    muri_uniti, aperture = _unisci(muri, finestre, archi, altri, f)
+    muri_uniti, aperture = _unisci(muri, finestre, archi, altri, f, segs_muro)
     _aggancia_angoli(muri_uniti)
+    validi = {}
     for k, (a, b, sp, lay) in enumerate(muri_uniti):
+        if float(np.linalg.norm(b - a)) < 0.05:
+            continue
+        validi[k] = len(an.muri)
         an.muri.append(MuroDWG(a, b, sp, lay))
+    aperture = [(validi[k], pa, pb, t) for k, pa, pb, t in aperture if k in validi]
     for k, pa, pb, tipo in aperture:
         an.aperture.append(AperturaDWG(k, pa, pb, tipo))
     for txt, pos, h, lay, _ in testi:
@@ -218,7 +230,7 @@ def _ha_linee_interne(a, b, sp, segs, f) -> bool:
     n = np.array([-u[1], u[0]])
     L = float(np.linalg.norm(b - a))
     for s in segs:
-        if abs(abs(float(np.dot(s.u, u))) - 1) > 1e-3:
+        if s.tratteggiata or abs(abs(float(np.dot(s.u, u))) - 1) > 1e-3:
             continue
         pa, pb = s.a * f, s.b * f
         off = float(np.dot(pa - a, n))
@@ -241,7 +253,7 @@ def _sulla_stessa_retta(m1, m2, tol=0.01):
     return abs(float(np.dot(c - a, n))) < tol
 
 
-def _unisci(muri, finestre, archi, altri, f):
+def _unisci(muri, finestre, archi, altri, f, segs_muro=()):
     gruppi: list[list] = []
     for m in muri:
         for g in gruppi:
@@ -276,9 +288,52 @@ def _unisci(muri, finestre, archi, altri, f):
                 if g1 - g0 < 0.05:
                     continue
                 pa, pb = a0 + u * g0, a0 + u * g1
+                if _faccia_continua(pa, pb, sp, segs_muro, f) or not _ha_stipiti(pa, pb, sp, segs_muro, f):
+                    continue  # innesto di muri perpendicolari, non un'apertura
                 tipo = _tipo_apertura(pa, pb, sp, finestre, archi, altri, f)
                 aperture.append([k, pa, pb, tipo])
     return uniti, aperture
+
+
+def _ha_stipiti(pa, pb, sp, segs, f) -> bool:
+    """Un vano vero e' chiuso ai due lati da stipiti: segmenti trasversali che uniscono le due facce."""
+    w = float(np.linalg.norm(pb - pa))
+    u = (pb - pa) / w
+    n = np.array([-u[1], u[0]])
+    trovati = [False, False]
+    for s in segs:
+        if abs(float(np.dot(s.u, u))) > 1e-3:
+            continue
+        a, b = s.a * f, s.b * f
+        t = float(np.dot(a - pa, u))
+        r0, r1 = sorted([float(np.dot(a - pa, n)), float(np.dot(b - pa, n))])
+        copre = min(r1, sp / 2) - max(r0, -sp / 2)
+        if copre < 0.8 * sp or r0 < -sp / 2 - 0.02 or r1 > sp / 2 + 0.02:
+            continue
+        for k, t_fine in enumerate((0.0, w)):
+            if abs(t - t_fine) < 0.02:
+                trovati[k] = True
+    return all(trovati)
+
+
+def _faccia_continua(pa, pb, sp, segs, f) -> bool:
+    """Vero se almeno una faccia del muro prosegue senza interruzione sopra il vano pa-pb."""
+    w = float(np.linalg.norm(pb - pa))
+    u = (pb - pa) / w
+    n = np.array([-u[1], u[0]])
+    for lato in (-1, 1):
+        coperto = 0.0
+        for s in segs:
+            if abs(abs(float(np.dot(s.u, u))) - 1) > 1e-3:
+                continue
+            a, b = s.a * f, s.b * f
+            if abs(float(np.dot(a - pa, n)) - lato * sp / 2) > 0.01:
+                continue
+            t0, t1 = sorted([float(np.dot(a - pa, u)), float(np.dot(b - pa, u))])
+            coperto += max(0.0, min(t1, w) - max(t0, 0.0))
+        if coperto > 0.8 * w:
+            return True
+    return False
 
 
 def _tipo_apertura(pa, pb, sp, finestre, archi, altri, f) -> str:
