@@ -68,11 +68,41 @@ def _piazza_locali(dati: dict) -> dict[str, _Locale]:
     return out
 
 
+def _cardinale(nout) -> str:
+    return max(CARDINALI, key=lambda k: float(np.dot(nout, CARDINALI[k])))
+
+
+def _contorno_esterno(loc: _Locale) -> Polygon:
+    """Contorno del locale allargato lato per lato dello spessore del muro (spessori_lati, se indicati)."""
+    lati = loc.dati.get("spessori_lati", {})
+    if not lati:
+        return loc.pol.buffer(loc.t_est, join_style="mitre")
+    c = list(orient(loc.pol, 1.0).exterior.coords)[:-1]
+    n = len(c)
+    rette = []
+    for i in range(n):
+        p, q = np.array(c[i], float), np.array(c[(i + 1) % n], float)
+        d = (q - p) / np.linalg.norm(q - p)
+        nout = np.array([d[1], -d[0]])
+        t = float(lati.get(_cardinale(nout), loc.t_est))
+        rette.append((p + nout * t, d))
+    pts = []
+    for i in range(n):
+        (p1, d1), (p2, d2) = rette[i - 1], rette[i]
+        den = d1[0] * d2[1] - d1[1] * d2[0]
+        if abs(den) < 1e-9:
+            pts.append(tuple(p2))
+            continue
+        t = ((p2[0] - p1[0]) * d2[1] - (p2[1] - p1[1]) * d2[0]) / den
+        pts.append(tuple(p1 + d1 * t))
+    return Polygon(pts)
+
+
 def _muri_da_massa(locali: dict[str, _Locale], dati: dict) -> list[Muro]:
     """Massa muraria = locali allargati dello spessore esterno, meno i locali; poi assi come da un DWG."""
     from .ingresso.dwg import analizza_pianta
     stanze = unary_union([l.pol for l in locali.values()])
-    massa = unary_union([l.pol.buffer(l.t_est, join_style="mitre") for l in locali.values()]).difference(stanze)
+    massa = unary_union([_contorno_esterno(l) for l in locali.values()]).difference(stanze)
     doc = ezdxf.new("R2018")
     msp = doc.modelspace()
     for g in getattr(massa, "geoms", [massa]):
@@ -154,59 +184,94 @@ def _aperture(dati: dict, locali: dict[str, _Locale], muri: list[Muro]) -> list[
             raise ValueError(f"Nessun muro trovato per l'apertura {spec} (controlla lato, 'dal' e progressive)")
         _, m, p0, d, nrm = best
         s0, s1 = sorted((float((pa - p0) @ d), float((pb - p0) @ d)))
-        tipo = spec.get("tipo", "finestra" if float(spec.get("davanzale", 0)) > 0 else "porta")
+        tipo = spec.get("tipo", "finestra" if V.model_validate(spec.get("davanzale", 0)).valore > 0 else "porta")
         pref = {"porta": "P", "finestra": "F", "varco": "V", "feritoia": "F"}[tipo]
         contatori[pref] = contatori.get(pref, 0) + 1
         lato_porta = "+" if float((np.array(loc.pol.centroid.coords[0]) - p0) @ nrm) > 0 else "-"
         w = s1 - s0
         out.append(Apertura(
             id=spec.get("id", f"{pref}{contatori[pref]}"), muro=m.id, da=V(valore=round(s0, 3)),
-            a=V(valore=round(s1, 3)), altezza=V(valore=float(spec["altezza"])),
-            davanzale=V(valore=float(spec.get("davanzale", 0.0))), tipo=tipo,
+            a=V(valore=round(s1, 3)), altezza=V.model_validate(spec["altezza"]),
+            davanzale=V.model_validate(spec.get("davanzale", 0.0)), tipo=tipo,
             forma=spec.get("forma", "rettangolare"), lato=lato_porta,
             battente=spec.get("battente", "doppio" if tipo == "porta" and w > 1.05 else "sx")))
     return out
 
 
+def _piano_copertura(c: dict, stanze) -> tuple:
+    """(z(x, y) dell'estradosso, tagli per le falde) di una copertura, dalle altezze all'intradosso."""
+    from shapely.geometry import box
+    minx, miny, maxx, maxy = stanze.bounds
+    sp = float(c.get("spessore", 0.30))
+    G = 1000.0
+    if c["tipo"] == "capanna":
+        hi, hc = float(c["h_imposta"]), float(c["h_colmo"])
+        if c.get("colmo", "x") == "x":
+            m = (miny + maxy) / 2
+            k = (hc - hi) / (m - miny)
+            return (lambda x, y: hc + sp - k * abs(y - m)), [box(-G, -G, G, m), box(-G, m, G, G)]
+        m = (minx + maxx) / 2
+        k = (hc - hi) / (m - minx)
+        return (lambda x, y: hc + sp - k * abs(x - m)), [box(-G, -G, m, G), box(m, -G, G, G)]
+    if c["tipo"] == "una_falda":
+        ha, hb = float(c["h_alta"]), float(c["h_bassa"])
+        bassa = c.get("bassa", "nord")
+        if bassa in ("nord", "sud"):
+            ya, yb = (miny, maxy) if bassa == "nord" else (maxy, miny)
+            return (lambda x, y: ha + sp + (hb - ha) * (y - ya) / (yb - ya)), [box(-G, -G, G, G)]
+        xa, xb = (minx, maxx) if bassa == "est" else (maxx, minx)
+        return (lambda x, y: ha + sp + (hb - ha) * (x - xa) / (xb - xa)), [box(-G, -G, G, G)]
+    raise ValueError(f"Tipo di copertura sconosciuto: {c['tipo']} (capanna | una_falda)")
+
+
 def _coperture(dati: dict, locali: dict[str, _Locale]) -> list[Falda]:
-    falde = []
-    for i, c in enumerate(dati.get("coperture", []), start=1):
+    """Falde: ogni copertura copre i propri locali con i loro muri e sporge verso l'esterno. Dove due
+    coperture si incontrano, la piu' alta copre il muro in comune (e sporge sopra l'altra), la piu' bassa
+    si ferma contro il muro."""
+    from shapely.ops import nearest_points
+    gruppi = []
+    for c in dati.get("coperture", []):
         grp = [locali[n] for n in c["locali"]]
         stanze = unary_union([l.pol for l in grp])
-        minx, miny, maxx, maxy = stanze.bounds
-        t = max(l.t_est for l in grp)
-        sp = float(c.get("spessore", 0.30))
+        z, tagli = _piano_copertura(c, stanze)
+        base = unary_union([_contorno_esterno(l) for l in grp])
         sporto = float(c.get("sporto", 0.0))
-        e = t + sporto
-        X0, X1, Y0, Y1 = minx - e, maxx + e, miny - e, maxy + e
-        if c["tipo"] == "capanna":
-            hi, hc = float(c["h_imposta"]), float(c["h_colmo"])
-            if c.get("colmo", "x") == "x":
-                m = (miny + maxy) / 2
-                k = (hc - hi) / (m - miny)
-                z = lambda x, y: hc + sp - k * abs(y - m)
-                polys = [[(X0, Y0), (X1, Y0), (X1, m), (X0, m)], [(X0, m), (X1, m), (X1, Y1), (X0, Y1)]]
-            else:
-                m = (minx + maxx) / 2
-                k = (hc - hi) / (m - minx)
-                z = lambda x, y: hc + sp - k * abs(x - m)
-                polys = [[(X0, Y0), (m, Y0), (m, Y1), (X0, Y1)], [(m, Y0), (X1, Y0), (X1, Y1), (m, Y1)]]
-        elif c["tipo"] == "una_falda":
-            ha, hb = float(c["h_alta"]), float(c["h_bassa"])
-            bassa = c.get("bassa", "nord")
-            if bassa in ("nord", "sud"):
-                ya, yb = (miny, maxy) if bassa == "nord" else (maxy, miny)
-                z = lambda x, y, ya=ya, yb=yb: ha + sp + (hb - ha) * (y - ya) / (yb - ya)
-            else:
-                xa, xb = (minx, maxx) if bassa == "est" else (maxx, minx)
-                z = lambda x, y, xa=xa, xb=xb: ha + sp + (hb - ha) * (x - xa) / (xb - xa)
-            polys = [[(X0, Y0), (X1, Y0), (X1, Y1), (X0, Y1)]]
-        else:
-            raise ValueError(f"Tipo di copertura sconosciuto: {c['tipo']} (capanna | una_falda)")
-        for j, pts in enumerate(polys, start=1):
-            falde.append(Falda(id=f"T{i}{j}", poligono=pts, quote=[V(valore=round(z(x, y), 4)) for x, y in pts],
-                               spessore=V(valore=sp), manto=c.get("manto", "coppi"),
-                               struttura=c.get("struttura", "travi in legno")))
+        if sporto > 0:
+            base = base.buffer(sporto, join_style="mitre")
+        gruppi.append((c, grp, stanze, z, tagli, base))
+    falde = []
+    for i, (c, grp, stanze, z, tagli, base) in enumerate(gruppi, start=1):
+        for c2, grp2, stanze2, z2, _, _ in gruppi:
+            if c2 is c:
+                continue
+            for o in grp2:
+                gap = stanze.distance(o.pol)
+                if gap >= 1.0:
+                    continue
+                p1, p2 = nearest_points(stanze, o.pol)
+                mx, my = (p1.x + p2.x) / 2, (p1.y + p2.y) / 2
+                if z(mx, my) < z2(mx, my) - 1e-6:  # siamo piu' bassi: ci fermiamo contro il muro
+                    muro_alto = o.pol.buffer(gap, join_style="mitre").union(
+                        _contorno_esterno(o).buffer(float(c.get("sporto", 0.0)) + 0.01, join_style="mitre")
+                        .difference(stanze.buffer(gap / 2, join_style="mitre")))
+                    base = base.difference(muro_alto)
+                elif abs(z(mx, my) - z2(mx, my)) <= 1e-6:  # stessa quota: a meta' del muro
+                    base = base.difference(o.pol.buffer(gap / 2, join_style="mitre"))
+        sp = float(c.get("spessore", 0.30))
+        nota = c.get("ipotesi")  # es. "spessore e sporto stimati dalle foto"
+        mk = (lambda x: V(valore=x, fonte="ipotesi", nota=nota)) if nota else (lambda x: V(valore=x))
+        j = 0
+        for taglio in tagli:
+            g = base.intersection(taglio)
+            for q in getattr(g, "geoms", [g]):
+                if not isinstance(q, Polygon) or q.area < 0.01:
+                    continue
+                j += 1
+                q = q.simplify(0.001)
+                pts = [(round(x, 4), round(y, 4)) for x, y in orient(q, 1.0).exterior.coords[:-1]]
+                falde.append(Falda(id=f"T{i}{j}", poligono=pts, quote=[mk(round(z(x, y), 4)) for x, y in pts],
+                                   spessore=mk(sp), manto=c.get("manto", "coppi"),
+                                   struttura=c.get("struttura", "travi in legno")))
     return falde
 
 
@@ -233,7 +298,8 @@ def costruisci(dati: dict) -> Edificio:
     muri = _muri_da_massa(locali, dati)
     ed = Edificio(pratica=Pratica(**dati.get("pratica", {})), muri=muri,
                   nord_gradi=float(dati.get("nord_gradi", 90.0)),
-                  nord_ipotizzato=bool(dati.get("nord_ipotizzato", "nord_gradi" not in dati)))
+                  nord_ipotizzato=bool(dati.get("nord_ipotizzato", "nord_gradi" not in dati)),
+                  quota_terreno=V.model_validate(dati.get("quota_terreno", 0.0)))
     ed.aperture = _aperture(dati, locali, muri)
     for k, l in enumerate(locali.values(), start=1):
         d = l.dati

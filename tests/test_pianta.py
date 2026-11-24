@@ -91,3 +91,14 @@ def test_catena_dei_vani_con_muro_interno():
     t = _testi(doc)
     for atteso in ("0,40", "2,85", "0,30", "3,20", "7,15"):  # muro, vano, muro, vano, muro
         assert atteso in t, atteso
+
+
+def test_catena_vani_coerente_con_totale_su_lato_storto():
+    import math
+    from rilievo.verifica import controlla_catene
+    from rilievo.costruttore import costruisci
+    ed = costruisci({"spessori": {"esterni": 0.15, "interni": 0.3},
+                     "locali": [{"nome": "A", "larghezza": 4.68, "larghezza_nord": 4.39, "profondita": 3.16}]})
+    doc = nuovo_documento(50)
+    disegna_pianta(ed, doc.modelspace(), scala=50)
+    assert controlla_catene(doc).esito == "OK"

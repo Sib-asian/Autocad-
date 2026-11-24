@@ -162,18 +162,21 @@ def _livelli(ed: Edificio, pezzi, zt) -> set[float]:
 
 
 def _quote_livello(P: _Penna, livelli, minx, sc):
-    """Simboli di quota a sinistra: triangolino + valore, saltando quelli troppo vicini."""
+    """Simboli di quota a sinistra: triangolino + valore. Prima gli estremi, poi i livelli che non si
+    accavallano con quelli gia' scritti."""
     x = minx - mm(14, sc)
-    ultimo = -1e9
-    imp = {livelli[0], livelli[-1]} if livelli else set()
-    for z in livelli:
-        if z - ultimo < mm(4.5, sc) and z not in imp:
-            continue
+    passo = mm(4.5, sc)
+    scelti: list[float] = []
+    if livelli:
+        ordine = [livelli[0], livelli[-1]] + list(livelli[1:-1])
+        for z in ordine:
+            if all(abs(z - w) >= passo for w in scelti):
+                scelti.append(z)
+    for z in sorted(scelti):
         t = mm(1.6, sc)
         P.poly([(x, z), (x - t, z + t * 1.2), (x + t, z + t * 1.2)], "QUOTE", chiusa=True)
         P.poly([(x - mm(6, sc), z), (x + mm(3, sc), z)], "QUOTE")
         P.testo(fmt_quota(z), (x - mm(1, sc), z + t * 1.6), 2.2, "QUOTE", "BOTTOM_RIGHT")
-        ultimo = z
 
 
 def _infisso(P: _Penna, ed: Edificio, p: Pezzo, layer):

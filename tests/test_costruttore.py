@@ -60,3 +60,15 @@ def test_caso_2031_dal_rilievo_per_locali():
 def test_errore_chiaro_locale_inesistente():
     with pytest.raises(ValueError, match="Cucinotto"):
         costruisci(_dati(aperture=[{"locale": "Cucinotto", "lato": "sud", "da": 1, "a": 2, "altezza": 2}]))
+
+
+def test_spessori_diversi_per_lato():
+    d = _dati()
+    d["locali"][0]["spessori_lati"] = {"nord": 0.60, "sud": 0.49, "ovest": 0.35}
+    ed = costruisci(d)
+    assert ed.valida() == []
+    sp = sorted(round(m.spessore.valore, 2) for m in ed.muri)
+    assert 0.60 in sp and 0.49 in sp and 0.35 in sp
+    from rilievo.genera.tabelle import sagoma
+    minx, miny, maxx, maxy = sagoma(ed).bounds
+    assert minx == pytest.approx(-0.35) and miny == pytest.approx(-0.49)

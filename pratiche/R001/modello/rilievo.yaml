@@ -1,0 +1,43 @@
+# Rustico - prospetti e sezioni. Fonte: GRAFICO.dwg (pianta) + altezze dell'utente + foto del sopralluogo.
+# Coordinate: origine nello spigolo interno sud-ovest del Vano 1. Il DWG ha tutti i muri "verticali"
+# inclinati di 2,2 gradi: imprecisione del disegno, raddrizzata. Il muro est del Vano 3 devia di altri
+# 5 gradi: e' storto davvero e resta storto.
+pratica: {codice: R001, tipo: rilievo, titolo: "Fabbricato rurale - prospetti e sezioni"}
+nord_gradi: 90
+nord_ipotizzato: true
+quota_terreno: {valore: -0.10, fonte: ipotesi, nota: "gradino d'ingresso stimato dalle foto"}
+materiale: pietra lavica
+spessori: {esterni: 0.45, interni: 0.35}
+locali:
+  - {nome: Vano 1, larghezza: 6.35, profondita: 3.71, h_min: 2.10, h_max: 3.80,
+     spessori_lati: {ovest: 0.35, sud: 0.49, nord: 0.60}}
+  - {nome: Vano 2, a_destra_di: Vano 1, spessore_muro: 0.35, larghezza: 3.85, profondita: 3.81,
+     h_min: 3.00, h_max: 3.80, spessori_lati: {est: 0.45, sud: 0.49, nord: 0.50}}
+  - {nome: Vano 3, origine: [6.18, 4.31], larghezza: 4.68, larghezza_nord: 4.39, profondita: 3.16,
+     spessore_esterno: 0.15, materiale: blocchi di cls, h_min: 2.05, h_max: 3.00}
+aperture:
+  - {locale: Vano 1, lato: sud, dal: ovest, da: 0.49, a: 1.99, tipo: finestra,
+     altezza: {valore: 1.00, fonte: ipotesi, nota: stimata dalle foto},
+     davanzale: {valore: 1.00, fonte: ipotesi, nota: stimato dalle foto}}
+  - {locale: Vano 1, lato: sud, dal: ovest, da: 3.64, a: 5.64, tipo: porta, altezza: 2.20}
+  - {locale: Vano 1, lato: nord, dal: ovest, da: 0.51, a: 2.01, tipo: finestra,
+     altezza: {valore: 1.00, fonte: ipotesi, nota: "stimata dalle foto (finestra con grata)"},
+     davanzale: {valore: 1.00, fonte: ipotesi, nota: stimato dalle foto}}
+  - {locale: Vano 2, lato: sud, dal: ovest, da: 1.51, a: 2.66, tipo: porta,
+     altezza: {valore: 2.20, fonte: ipotesi, nota: "come la porta del Vano 1"}}
+  - {locale: Vano 2, lato: nord, dal: ovest, da: 2.06, a: 2.96, tipo: porta, altezza: 1.80}
+  - {locale: Vano 3, lato: ovest, dal: sud, da: 0.10, a: 0.95, tipo: porta,
+     altezza: {valore: 2.00, fonte: ipotesi, nota: "stimata dalle foto (portone in legno)"}}
+  - {locale: Vano 3, lato: nord, dal: ovest, da: 2.39, a: 2.79, tipo: finestra,
+     altezza: {valore: 0.40, fonte: ipotesi, nota: stimata},
+     davanzale: {valore: 1.20, fonte: ipotesi, nota: stimato}}
+coperture:   # altezze all'intradosso dell'utente; spessore del tetto e sporto stimati
+  - {locali: [Vano 1], tipo: capanna, colmo: y, h_imposta: 2.10, h_colmo: 3.80, spessore: 0.30, sporto: 0.15,
+     ipotesi: "spessore del tetto (0,30) e sporto (0,15) stimati dalle foto"}
+  - {locali: [Vano 2], tipo: una_falda, bassa: sud, h_alta: 3.80, h_bassa: 3.00, spessore: 0.30, sporto: 0.15,
+     ipotesi: "spessore del tetto (0,30) e sporto (0,15) stimati dalle foto"}
+  - {locali: [Vano 3], tipo: una_falda, bassa: nord, h_alta: 3.00, h_bassa: 2.05, spessore: 0.20, sporto: 0.10,
+     ipotesi: "spessore del tetto (0,20) e sporto (0,10) stimati dalle foto"}
+sezioni:   # A: trasversale ai due vani bassi; B: dal Vano 2 al Vano 3 attraverso la porta (H 1,80)
+  - {nome: A, p0: [-1.5, 1.9], p1: [12.0, 1.9], verso: sx}
+  - {nome: B, p0: [9.2, -1.5], p1: [9.2, 9.0], verso: sx}

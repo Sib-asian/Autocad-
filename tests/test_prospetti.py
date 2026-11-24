@@ -85,3 +85,16 @@ def test_lesione_solo_sulla_facciata_del_muro(ed_scatola):
         disegna_prospetto(ed, v, doc.modelspace(), scala=50)
         presente = any(e.dxf.layer == "DEGRADO" for e in doc.modelspace())
         assert presente == (v.nome == "Prospetto Sud"), v.nome
+
+
+def test_quote_livello_vicine_non_si_accavallano():
+    from rilievo.dxf.stile import mm
+    from rilievo.genera.pianta import _Penna
+    from rilievo.genera.prospetti import _quote_livello
+    doc = nuovo_documento(50)
+    P = _Penna(doc.modelspace(), (0, 0), 50)
+    _quote_livello(P, [0.0, 2.2, 4.10, 4.17], 0.0, 50)
+    zs = sorted(e.dxf.insert.y for e in doc.modelspace().query("TEXT"))
+    assert all(b - a >= mm(4.5, 50) - 1e-9 for a, b in zip(zs, zs[1:])), zs
+    testi = {e.dxf.text for e in doc.modelspace().query("TEXT")}
+    assert "+4,17" in testi and "±0,00" in testi  # estremi sempre presenti

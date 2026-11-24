@@ -1,11 +1,16 @@
-# Domande aperte - pratica R001 (prospetti e sezioni del rustico)
+# Pratica R001 - prospetti e sezioni del rustico
 
-Richiesta dell'utente: prospetti e sezioni (la pianta c'e' gia' in GRAFICO.dwg). Consegna: solo DWG.
+Richiesta: prospetti e sezioni (la pianta c'e' gia' in GRAFICO.dwg). Consegna: solo DWG.
 
-0. Manca il file GRAFICO.dwg (ricevuto solo lo screenshot, senza scala).
-1. Coperture: posizione di H min / H max per ogni locale (falda verso sud? capanna?); verso della falda del corpo nord.
-2. Gronda e colmo esterni: stima da foto con la porta (H 2,20) come riferimento, +/- 10-20 cm, in rosso?
-3. Muro est del corpo nord: storto davvero o imprecisione del disegno?
-4. Foto -> facciate: 9/12/13 portone e pluviale; 11 finestra con ante e porta; 14/15/16 timpani; 17/19 finestra con grata.
-5. Foto 18 (corpo in blocchi senza tetto): da disegnare?
-6. Sezioni: A trasversale nella stanza grande, B longitudinale nel corpo basso. Va bene?
+## Risposte dell'utente
+- Altezze: quelle scritte in pianta. Gronda e quote esterne: le calcolo io. Muro storto: decido io. Sezioni: libere.
+
+## Scelte fatte (da verificare)
+- Muri del DWG inclinati di 2,2 gradi in modo uniforme: raddrizzati (imprecisione del disegno).
+- Muro est del Vano 3: storto di altri 5 gradi rispetto al resto, lasciato storto (lo e' anche nella planimetria).
+- Coperture lette dalle altezze: Vano 1 a capanna con colmo nord-sud (2,10 - 3,80); Vano 2 a una falda verso sud
+  (3,80 - 3,00); Vano 3 a una falda verso nord (3,00 - 2,05). Dove si incontrano, il tetto piu' alto copre il muro.
+- Spessore del tetto 0,30 (0,20 sul Vano 3), sporto 0,15 (0,10), terreno a -0,10: stimati dalle foto.
+- Finestre: altezze e davanzali stimati dalle foto. Porta del Vano 2 alta come quella del Vano 1 (2,20).
+- Omessi: il ripostiglio da 10 cm nel Vano 3 e il piccolo risalto del muro ovest del Vano 3 (non cambiano
+  prospetti e sezioni).

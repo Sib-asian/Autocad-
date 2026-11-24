@@ -283,12 +283,14 @@ def _quote_esterne(P: _Penna, ed: Edificio, ds: str):
 
 
 def _estremi_distinti(punti, u, pa, tol=0.005):
-    ss = sorted({round(float(np.dot(np.array(p) - pa, u)), 4) for p in punti})
+    """Punti ordinati lungo u, senza doppioni; restituisce i punti originali (nessun arrotondamento qui:
+    lo fa la catena, cosi' parziali e totale coincidono)."""
+    coppie = sorted(((float(np.dot(np.array(p) - pa, u)), np.array(p)) for p in punti), key=lambda t: t[0])
     out = []
-    for x in ss:
-        if not out or x - out[-1] > tol:
-            out.append(x)
-    return [pa + u * x for x in out]
+    for s, p in coppie:
+        if not out or s - out[-1][0] > tol:
+            out.append((s, p))
+    return [p for _, p in out]
 
 
 def _quote_interne(P: _Penna, ed: Edificio, ds: str):
