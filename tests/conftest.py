@@ -16,9 +16,9 @@ def scatola(lx=6.35, ly=3.70, sp=0.40, colmo=4.0, gronda=3.0, aperture=None, spo
     ym = ly / 2
     e = sp + sporto
     falde = [
-        {"id": "F1", "poligono": [[-e, -e], [lx + e, -e], [lx + e, ym], [-e, ym]],
+        {"id": "T1", "poligono": [[-e, -e], [lx + e, -e], [lx + e, ym], [-e, ym]],
          "quote": [gronda, gronda, colmo, colmo]},
-        {"id": "F2", "poligono": [[-e, ym], [lx + e, ym], [lx + e, ly + e], [-e, ly + e]],
+        {"id": "T2", "poligono": [[-e, ym], [lx + e, ym], [lx + e, ly + e], [-e, ly + e]],
          "quote": [colmo, colmo, gronda, gronda]},
     ]
     return Edificio.model_validate({
