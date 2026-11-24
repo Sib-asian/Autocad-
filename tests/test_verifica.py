@@ -79,3 +79,17 @@ def test_catene_allineate_di_disegni_diversi_si_verificano_separate():
                offset_totale=-1.0)
     c = controlla_catene(doc)
     assert c.esito == "OK" and c.trovato.startswith("2 catene")
+
+
+def test_prospetti_puliti_scopre_linee_storte():
+    """Una linea quasi verticale ma storta di pochi gradi nel prospetto e' un difetto (errore della pratica R001)."""
+    from types import SimpleNamespace
+    from rilievo.dxf.stile import nuovo_documento
+    from rilievo.verifica import controlla_linee_prospetti
+    doc = nuovo_documento(50)
+    msp = doc.modelspace()
+    msp.add_lwpolyline([(0, 0), (0, 3)], dxfattribs={"layer": "PROSPETTI_SPIGOLI"})          # verticale: ok
+    msp.add_lwpolyline([(1, 0), (4, 1)], dxfattribs={"layer": "PROSPETTI_SPIGOLI"})          # falda: ok
+    assert controlla_linee_prospetti(doc) == []
+    msp.add_lwpolyline([(5.0, 3.15), (4.95, 4.16)], dxfattribs={"layer": "PROSPETTI_SPIGOLI"})  # storta
+    assert len(controlla_linee_prospetti(doc)) == 1

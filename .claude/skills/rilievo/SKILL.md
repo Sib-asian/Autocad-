@@ -55,7 +55,7 @@ Disegni imprecisi: interpretali con buon senso da tecnico, non ricalcarli.
      nessuna parete interna visibile; niente sporti, coppi, travi o altri elementi che l'utente non ha dato;
    - totali dei prospetti = misure esterne della pianta; stesse quote di gronda e colmo in prospetti e sezioni;
    - se qualcosa non torna, si corregge il programma (con un test) prima di consegnare, non dopo.
-   Lezione della pratica R001: la forma dei tetti va presa dalle altezze scritte dall'utente, non dalle foto.
+   Errori gia' fatti e da non ripetere: `docs/lezioni/R001-errori-da-non-ripetere.md` (leggerlo prima).
 6. **Consegna.** Invia DWG + PDF + `verifica.md` + `registro_ipotesi.md`. Nel messaggio: cosa c'e', i controlli
    superati con i numeri, l'elenco delle ipotesi da verificare, e che le tavole vanno firmate da un tecnico abilitato.
 

@@ -197,6 +197,60 @@ def controlla_requisiti(ed: Edificio) -> Controllo:
                      "ATTENZIONE" if no else "OK", no)
 
 
+def controlla_linee_prospetti(doc) -> list[str]:
+    """Linee quasi verticali ma storte di pochi gradi nei prospetti: sono sempre un difetto del disegno
+    (salti di quota calcolati male, dentelli negli angoli). Gli archi no: un tratto che continua in un altro
+    tratto con una piega dolce (2-25 gradi), anche di un'altra polilinea, fa parte di una curva."""
+    segs = []
+    for e in doc.modelspace().query('LWPOLYLINE[layer=="PROSPETTI_CONTORNO" | layer=="PROSPETTI_SPIGOLI"]'):
+        pts = [(x, y) for x, y, *_ in e.get_points()]
+        if e.closed and len(pts) > 2:
+            pts.append(pts[0])
+        segs += [(a, b) for a, b in zip(pts, pts[1:]) if math.dist(a, b) > 1e-6]
+
+    def ang(sg):
+        (a, b) = sg
+        return math.atan2(b[1] - a[1], b[0] - a[0])
+
+    def piega(s1, s2):  # angolo fra le due rette, 0-90 gradi
+        d = abs(math.degrees(ang(s1) - ang(s2))) % 180
+        return min(d, 180 - d)
+
+    out = []
+    for sg in segs:
+        a, b = sg
+        L = math.dist(a, b)
+        dal_verticale = 90 - piega(sg, ((0, 0), (1, 0)))
+        if not (0.5 < dal_verticale < 8.0 and L > 0.10):
+            continue
+        vicini = [t for t in segs if t is not sg and any(math.dist(p, q) < 1e-3 for p in sg for q in t)]
+        if any(2.0 < piega(sg, t) < 25.0 for t in vicini):
+            continue  # pezzo di un arco
+        out.append(f"linea storta di {dal_verticale:.1f} gradi lunga {L:.2f} vicino a ({a[0]:.2f}, {a[1]:.2f})")
+    return out
+
+
+def controlla_prospetti(ed: Edificio, tavole) -> Controllo:
+    """Errori della pratica R001 da non ripetere: interno dell'edificio visibile nei prospetti e linee storte."""
+    nome = "Prospetti puliti"
+    spieg = "dall'esterno non si vede l'interno dell'edificio e gli spigoli verticali sono verticali"
+    if not any("prospett" in f.contenuto.lower() for f in tavole.fogli):
+        return Controllo(nome, spieg, "-", "nessun prospetto richiesto", "OK")
+    from .genera.prospetti import lati_prospetto
+    from .modello3d import facce
+    from .proiezione import proietta
+    tutte = facce(ed)
+    problemi = []
+    for v in lati_prospetto(ed):
+        for p in proietta(tutte, v.direzione):
+            # una parete interna si puo' vedere solo sopra un tetto piu' basso, mai da terra
+            if p.faccia.tipo == "parete_int" and p.poligono2d.area > 0.01 and p.poligono2d.bounds[1] < 1.0:
+                problemi.append(f"{v.nome}: si vede l'interno del muro {p.faccia.rif_id} "
+                                f"(da quota {p.poligono2d.bounds[1]:.2f})")
+    problemi += controlla_linee_prospetti(tavole.doc)
+    return Controllo(nome, spieg, "0 difetti", f"{len(problemi)} difetti", "ERRORE" if problemi else "OK", problemi)
+
+
 def verifica(ed: Edificio, tavole, dwg=None) -> Report:
     rep = Report()
     err = ed.valida()
@@ -205,6 +259,7 @@ def verifica(ed: Edificio, tavole, dwg=None) -> Report:
     rep.righe.append(controlla_catene(tavole.doc))
     rep.righe.append(controlla_aperture(ed))
     rep.righe.append(controlla_colmo(ed, tavole))
+    rep.righe.append(controlla_prospetti(ed, tavole))
     if ed.locali:
         rep.righe.append(controlla_requisiti(ed))
     sov = testi_sovrapposti(tavole.doc)

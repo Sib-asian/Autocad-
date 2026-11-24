@@ -156,7 +156,8 @@ def _profilo_sommita(ed: Edificio, p0, p1, muri) -> tuple[list[tuple[float, floa
     ss = sorted({round(min(max(s, 0.0), L), 9) for s in ss})
     prof, ipotesi = [], False
     for s in ss:
-        x, y = p0 + u * s
+        # l'altezza si legge 3 mm dentro la parete: sullo spigolo varrebbe il tetto del vicino
+        x, y = p0 + u * min(max(s, 0.003), L - 0.003)
         if fisse:
             z = fisse[0].valore
             ipotesi |= fisse[0].ipotesi
