@@ -51,28 +51,49 @@ def _misura(vista: Vista, scala: int) -> Ingombro:
     return vista(prova.modelspace(), (0.0, 0.0))
 
 
-def _impagina(viste: list[tuple[Vista, Ingombro]], scala: int):
-    """Sceglie il formato piu' piccolo in cui le viste stanno a righe. Ritorna (formato, posizioni)."""
-    s = scala / 1000
-    for nome, W, H in FORMATI:
-        utile_w = (W - MARG_SX - MARG - 2 * 5) * s
-        utile_h = (H - 2 * MARG - CARTIGLIO[1] - 2 * 5) * s
-        x = y = alt_riga = 0.0
-        pos = []
-        ok = True
-        for _, ing in viste:
-            w, h = ing.larghezza, ing.altezza
-            if w > utile_w:
-                ok = False
-                break
-            if x > 0 and x + w > utile_w:
+def _prova_formato(viste, W, H, s, ordine):
+    """Posiziona le viste a righe (dall'alto) nel foglio W x H; None se non entrano o coprono il cartiglio."""
+    utile_w = (W - MARG_SX - MARG - 2 * 5) * s
+    utile_h = (H - 2 * MARG - 2 * 5) * s
+    # cartiglio in coordinate del riquadro utile (x da sinistra, y dall'alto)
+    cx0 = (W - MARG - CARTIGLIO[0] - 5 - MARG_SX - 5) * s
+    cy0 = (H - MARG - 5 - MARG - CARTIGLIO[1] - 5) * s
+    x = y = alt_riga = 0.0
+    pos = {}
+    for i in ordine:
+        w, h = viste[i][1].larghezza, viste[i][1].altezza
+        if w > utile_w:
+            return None
+        if x > 0 and x + w > utile_w:
+            y += alt_riga + SPAZIO * s
+            x, alt_riga = 0.0, 0.0
+        if x + w > cx0 and y + h > cy0:  # finirebbe sul cartiglio: va a capo sotto? non c'e' spazio
+            if x > 0:
                 y += alt_riga + SPAZIO * s
                 x, alt_riga = 0.0, 0.0
-            pos.append((x, y))
-            x += w + SPAZIO * s
-            alt_riga = max(alt_riga, h)
-        if ok and y + alt_riga <= utile_h:
-            return nome, W, H, pos, y + alt_riga
+            if w > cx0 and y + h > cy0:
+                return None
+        pos[i] = (x, y)
+        x += w + SPAZIO * s
+        alt_riga = max(alt_riga, h)
+    if y + alt_riga > utile_h:
+        return None
+    return [pos[i] for i in range(len(viste))], y + alt_riga
+
+
+def _impagina(viste: list[tuple[Vista, Ingombro]], scala: int):
+    """Sceglie il formato piu' piccolo in cui stanno le viste (la prima resta in alto a sinistra)."""
+    s = scala / 1000
+    n = len(viste)
+    resto = list(range(1, n))
+    ordini = [list(range(n)),
+              [0] + sorted(resto, key=lambda i: -viste[i][1].altezza),
+              [0] + sorted(resto, key=lambda i: -viste[i][1].larghezza)]
+    for nome, W, H in FORMATI:
+        for ordine in ordini:
+            r = _prova_formato(viste, W, H, s, ordine)
+            if r is not None:
+                return nome, W, H, r[0], r[1]
     raise ValueError("Le viste non entrano neanche in un A0: dividere la tavola")
 
 

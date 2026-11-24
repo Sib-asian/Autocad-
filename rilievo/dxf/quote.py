@@ -21,13 +21,13 @@ def fmt(d: Decimal | float) -> str:
     if not isinstance(d, Decimal):
         d = arrotonda(d)
     s = f"{d:.2f}".replace(".", ",")
-    return "±0,00" if s in ("0,00", "-0,00") else s
+    return "0,00" if s == "-0,00" else s
 
 
 def fmt_quota(z: float) -> str:
     d = arrotonda(z)
     if d == 0:
-        return "±0,00"
+        return "±0,00"  # quota di riferimento
     return ("+" if d > 0 else "") + fmt(d)
 
 

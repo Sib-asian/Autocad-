@@ -71,3 +71,23 @@ def test_testo_quote_leggibile():
         assert ang <= 90 or ang > 270, ang
     # la quota resta dal lato richiesto (a sinistra di (-1,0) = sotto)
     assert c.entita[0].dxf.defpoint[1] < 0
+
+
+def test_etichette_aperture(ed_scatola):
+    doc = nuovo_documento(50)
+    disegna_pianta(ed_scatola, doc.modelspace(), scala=50)
+    t = _testi(doc)
+    assert "F1 80x80 dav.120" in t
+    assert "P1 100x220" in t
+
+
+def test_catena_dei_vani_con_muro_interno():
+    from conftest import scatola
+    ed = scatola()
+    ed.muri.append(ed.muri[0].model_copy(update={"id": "MI", "asse": [(3.0, -0.2), (3.0, 3.9)],
+                                                  "spessore": ed.muri[0].spessore.model_copy(update={"valore": 0.3})}))
+    doc = nuovo_documento(50)
+    disegna_pianta(ed, doc.modelspace(), scala=50)
+    t = _testi(doc)
+    for atteso in ("0,40", "2,85", "0,30", "3,20", "7,15"):  # muro, vano, muro, vano, muro
+        assert atteso in t, atteso

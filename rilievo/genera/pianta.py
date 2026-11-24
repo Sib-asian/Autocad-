@@ -6,14 +6,14 @@ from dataclasses import dataclass
 
 import ezdxf.bbox
 import numpy as np
-from shapely.geometry import MultiPolygon, Polygon
+from shapely.geometry import LineString, MultiPolygon, Polygon
 from shapely.geometry.polygon import orient
 from shapely.ops import polylabel, unary_union
 
 from ..dxf.quote import catena, fmt, fmt_quota, quota_allineata
 from ..dxf.stile import aggiungi_dimstyle, mm, testo
 from ..geometria import (apertura_mondo, direzione, normale_sx, perimetro_esterno, poligono_locale,
-                         poligoni_muri)
+                         poligono_muro, poligoni_muri)
 from ..modello import Edificio
 from ..modello3d import _muri_del_lato
 
@@ -214,6 +214,28 @@ def _disegna_apertura(P: _Penna, ed: Edificio, ap):
             P.linea(a + n * h * k, b + n * h * k, "APERTURE_NASCOSTE")
     if lay_i:
         P.poly([a + n * h, b + n * h, b - n * h, a - n * h], lay_i, chiusa=True)
+    _etichetta_apertura(P, ed, ap, a, b, n, h, lay_i or "TESTI")
+
+
+def _etichetta_apertura(P: _Penna, ed: Edificio, ap, a, b, n, h, layer):
+    """Sigla dell'apertura (L x H in cm, davanzale) sul lato interno del locale."""
+    cm = lambda x: f"{round(x * 100):d}"
+    txt = f"{ap.id} {cm(ap.larghezza)}x{cm(ap.altezza.valore)}"
+    if ap.davanzale.valore > 0.005:
+        txt += f" dav.{cm(ap.davanzale.valore)}"
+    lato = -1
+    for p0, p1, nrm in perimetro_esterno(ed):
+        if LineString([p0, p1]).distance(LineString([tuple(a), tuple(b)])) <= h + 0.02:
+            lato = -1 if float(np.dot(nrm, n)) > 0 else 1  # verso l'interno dell'edificio
+            break
+    else:
+        lato = -1 if ap.lato == "+" else 1  # muro interno: dal lato opposto all'apertura della porta
+    d = b - a
+    ang = math.degrees(math.atan2(d[1], d[0]))
+    if ang > 90 or ang <= -90:
+        ang -= 180
+    pos = (a + b) / 2 + n * lato * (h + mm(3.5, P.scala))
+    P.testo(txt, pos, 1.8, layer, "MIDDLE_CENTER", rot=ang)
 
 
 def _quote_esterne(P: _Penna, ed: Edificio, ds: str):
@@ -233,10 +255,41 @@ def _quote_esterne(P: _Penna, ed: Edificio, ds: str):
                     s = float(np.dot(np.array(q) - pa, u))
                     if 0 < s < L:
                         punti.append(pa + u * s)
+        # catena dei vani: facce dei muri interni che si innestano su questo lato
+        vani = [pa, pb]
+        paralleli = [m for m in _muri_del_lato(ed, p0, p1) if abs(abs(float(np.dot(u, direzione(m)))) - 1) < 1e-6]
+        sp_lato = max((m.spessore.valore for m in paralleli), default=0.0)
+        n_in = -np.array(nrm)
+        faccia_int = LineString([tuple(pa + n_in * sp_lato), tuple(pb + n_in * sp_lato)])
+        for m in ed.muri:
+            if m in paralleli or abs(float(np.dot(u, direzione(m)))) > 0.999:
+                continue
+            inter = poligono_muro(ed, m).intersection(faccia_int)
+            for g in getattr(inter, "geoms", [inter]):
+                for q in getattr(g, "coords", []):
+                    sq = float(np.dot(np.array(q) - pa, u))
+                    if 0.01 < sq < L - 0.01:
+                        vani.append(pa + u * sq)
         # direzione invertita: la catena va a sinistra di (p1->p0), cioe' verso l'esterno
-        c = catena(P.msp, [P.T(p) for p in punti], tuple(-u), mm(10, sc), ds, totale=True,
-                   offset_totale=mm(18, sc))
+        c = catena(P.msp, [P.T(p) for p in punti], tuple(-u), mm(10, sc), ds)
         P.ent.extend(c.entita)
+        livello = 18
+        if len(vani) > 2:
+            c = catena(P.msp, [P.T(p) for p in _estremi_distinti(vani, u, pa)], tuple(-u), mm(18, sc), ds)
+            P.ent.extend(c.entita)
+            livello = 26
+        if len(punti) > 2 or len(vani) > 2:
+            c = catena(P.msp, [P.T(pa), P.T(pb)], tuple(-u), mm(livello, sc), ds)
+            P.ent.extend(c.entita)
+
+
+def _estremi_distinti(punti, u, pa, tol=0.005):
+    ss = sorted({round(float(np.dot(np.array(p) - pa, u)), 4) for p in punti})
+    out = []
+    for x in ss:
+        if not out or x - out[-1] > tol:
+            out.append(x)
+    return [pa + u * x for x in out]
 
 
 def _quote_interne(P: _Penna, ed: Edificio, ds: str):
@@ -271,18 +324,6 @@ def _quote_interne(P: _Penna, ed: Edificio, ds: str):
             c = list(pol.exterior.coords)
             for a, b in ((a, b) for a, b in zip(c, c[1:]) if math.dist(a, b) > 0.3):
                 P.ent.extend(quota_allineata(P.msp, P.T(a), P.T(b), mm(7, sc), ds))
-    # larghezza delle porte interne (non sul perimetro)
-    perim = [LineStringSafe(p0, p1) for p0, p1, _ in perimetro_esterno(ed)]
-    for ap in ed.aperture:
-        a, b = apertura_mondo(ed, ap)
-        mid = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
-        m = ed.muro(ap.muro)
-        if min(l.distance_to(mid) for l in perim) > m.spessore.valore / 2 + 0.01:
-            n = normale_sx(m)
-            h = m.spessore.valore / 2
-            pa = np.array(a) - n * h
-            pb = np.array(b) - n * h
-            P.ent.extend(quota_allineata(P.msp, P.T(pb), P.T(pa), mm(4, sc), ds))
 
 
 class LineStringSafe:

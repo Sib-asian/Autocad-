@@ -433,7 +433,8 @@ def bozza_modello(an: AnalisiDWG):
         spazi = []
     usati = set()
     for txt, pos, h in an.testi:
-        if not re.search(r"[A-Za-z]{3,}", txt) or re.match(r"^(S|h|q)\b", txt) or "scala" in txt.lower():
+        if (not re.search(r"[A-Za-z]{3,}", txt) or re.match(r"^(S|h|q)\b", txt) or "scala" in txt.lower()
+                or re.search(r"\d+\s*x\s*\d+", txt)):  # sigle delle aperture (es. "F1 80x120")
             continue
         for i, c in enumerate(spazi):
             if i not in usati and c.contains(Point(pos)):
