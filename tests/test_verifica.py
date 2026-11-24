@@ -40,3 +40,20 @@ def test_rileva_catena_sbagliata(ed_scatola):
     rep = verifica(ed, t)
     riga = [c for c in rep.righe if c.nome == "Catene di quote"][0]
     assert riga.esito == "ERRORE"
+
+
+def test_nessun_testo_sovrapposto_su_caso_banco():
+    from rilievo.banco.caso import genera_caso
+    for seed in (4, 2031):
+        ed = genera_caso(seed)
+        t = componi_tavole(ed)
+        assert sovrapposti(t.doc) == [], seed
+
+
+def test_note_raggruppate():
+    from rilievo.genera.tavola import righe_note
+    from rilievo.modello import Edificio
+    ed = Edificio.model_validate({"falde": [{"id": "T1", "poligono": [[0, 0], [1, 0], [1, 1]],
+        "quote": [{"valore": 3, "fonte": "ipotesi", "nota": "da verificare"}] * 3}]})
+    righe = righe_note(ed)
+    assert len([r for r in righe if r.startswith("T1")]) == 1

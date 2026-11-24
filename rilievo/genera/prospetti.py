@@ -118,10 +118,12 @@ def disegna_pezzi(ed, nome, sinistra, destra, pezzi: list[Pezzo], msp, scala, or
     # --- quote
     if quote:
         livelli = _livelli(ed, pezzi, zt) | set(extra_quote_z)
+        if tagliati:
+            livelli |= {round(t.bounds[3], 4) for t in tagliati}
         _quote_livello(P, sorted(livelli), minx, sc)
         punti = [(maxx, z) for z in sorted(livelli)]
         if len(punti) >= 2:
-            c = catena(msp, [P.T(q) for q in punti], (0, 1), -mm(10, sc), ds)
+            c = catena(msp, [P.T(q) for q in punti], (0, 1), -mm(10, sc), ds, min_parziale=mm(4.5, sc))
             P.ent.extend(c.entita)
         xs = {minx, maxx}
         for p in pezzi:
@@ -131,7 +133,7 @@ def disegna_pezzi(ed, nome, sinistra, destra, pezzi: list[Pezzo], msp, scala, or
                     xs |= {x0, x1}
         if len(xs) >= 2:
             c = catena(msp, [P.T((x, zt)) for x in sorted(xs)], (1, 0), -mm(12, sc), ds, totale=len(xs) > 2,
-                       offset_totale=-mm(20, sc))
+                       offset_totale=-mm(20, sc), min_parziale=mm(4.0, sc))
             P.ent.extend(c.entita)
 
     # --- orientamento alle estremita' e titolo
@@ -151,14 +153,11 @@ def _livelli(ed: Edificio, pezzi, zt) -> set[float]:
         if p.faccia.tipo == "infisso":
             _, z0, _, z1 = p.poligono2d.bounds
             z |= {round(z0, 4), round(z1, 4)}
-        elif p.faccia.tipo in ("falda", "bordo_falda"):
-            _, z0, _, z1 = p.poligono2d.bounds
-            z |= {round(z1, 4)}
-            if p.faccia.tipo == "bordo_falda":
-                z.add(round(z0 + (z1 - z0), 4))
-    falde_z = [q.valore for f in ed.falde for q in f.quote]
-    if falde_z:
-        z |= {round(min(falde_z), 4), round(max(falde_z), 4)}
+        elif p.faccia.tipo == "falda":
+            z.add(round(p.poligono2d.bounds[3], 4))
+        elif p.faccia.tipo == "bordo_falda":  # estradosso: gronda (punto basso) e colmo (punto alto)
+            top = p.faccia.pts[:2, 2]
+            z |= {round(float(top.min()), 4), round(float(top.max()), 4)}
     return z
 
 

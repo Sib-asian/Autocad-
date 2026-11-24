@@ -201,17 +201,24 @@ def _legenda(ed: Edificio, msp, o, scala) -> Ingombro:
     return Ingombro.da_entita(P.ent)
 
 
+def righe_note(ed: Edificio) -> list[str]:
+    """Ipotesi raggruppate per oggetto e motivo (una riga per falda, non una per vertice)."""
+    gruppi: dict[tuple, list[float]] = {}
+    for ogg, campo, val in ed.ipotesi():
+        chiave = (ogg, campo.split("[")[0], val.nota)
+        gruppi.setdefault(chiave, []).append(val.valore)
+    righe = ["Orientamento del Nord ipotizzato."] if ed.nord_ipotizzato else []
+    for (ogg, campo, nota), valori in gruppi.items():
+        lo, hi = min(valori), max(valori)
+        v = fmt(lo) if abs(hi - lo) < 0.005 else f"{fmt(lo)}-{fmt(hi)}"
+        righe.append(f"{ogg}: {campo} = {v}" + (f" - {nota}" if nota else ""))
+    return righe or ["Nessun dato ipotizzato: tutte le misure provengono dal rilievo."]
+
+
 def _note(ed: Edificio, msp, o, scala) -> Ingombro:
     P = _Penna(msp, o, scala)
     s = scala / 1000
-    righe = []
-    if ed.nord_ipotizzato:
-        righe.append("Orientamento del Nord ipotizzato.")
-    for ogg, campo, val in ed.ipotesi():
-        nota = f" - {val.nota}" if val.nota else ""
-        righe.append(f"{ogg}: {campo} = {fmt(val.valore)}{nota}")
-    if not righe:
-        righe = ["Nessun dato ipotizzato: tutte le misure provengono dal rilievo."]
+    righe = righe_note(ed)
     righe = righe[:30] + ([f"... e altre {len(righe) - 30} voci (vedi registro)"] if len(righe) > 30 else [])
     P.testo("NOTE E DATI DA VERIFICARE", (0, (len(righe) * 4 + 3) * s), 3.0, "TESTI", "BOTTOM_LEFT")
     for i, rg in enumerate(righe):

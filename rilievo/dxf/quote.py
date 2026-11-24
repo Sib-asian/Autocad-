@@ -69,6 +69,8 @@ def catena(msp, punti, direzione, offset: float, dimstyle: str, layer: str = "QU
             continue
         pts.append(x)
         vals.append(xr)
+    if pts and pts[-1] != s[-1]:  # l'estremo finale resta sempre (al posto dell'ultimo troppo vicino)
+        pts[-1], vals[-1] = s[-1], sr[-1]
     ang = float(np.degrees(np.arctan2(d[1], d[0])))
     ent, parz = [], []
 

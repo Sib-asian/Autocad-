@@ -245,13 +245,28 @@ def _quote_interne(P: _Penna, ed: Edificio, ds: str):
         pol = orient(poligono_locale(ed, loc), 1.0)
         mrr = pol.minimum_rotated_rectangle
         if mrr.area > 0 and pol.area / mrr.area > 0.985:
-            # rettangolo: due quote che passano vicino al centro, fuori dall'etichetta del locale
+            # rettangolo: una quota per direzione, sotto e a destra dell'etichetta del locale
             c = [np.array(q) for q in list(orient(mrr, 1.0).exterior.coords)[:4]]
-            for i, (sposta_mm) in ((0, 14), (1, 24)):
-                a, b = c[i], c[i + 1]
+            lab = polylabel(pol, tolerance=0.02)
+            fatti = set()
+            for i in range(4):
+                a, b = c[i], c[(i + 1) % 4]
+                u = (b - a) / np.linalg.norm(b - a)
+                verticale = abs(u[1]) > abs(u[0])
+                if verticale in fatti:
+                    continue
+                n_in = np.array([-u[1], u[0]])
+                # distanza dal lato a cui passare: oltre l'ingombro dell'etichetta (meta' larghezza/altezza)
+                d_lab = float(np.dot(np.array([lab.x, lab.y]) - a, n_in))
+                ingombro = mm(20, sc) if verticale else mm(13, sc)
                 prof = float(np.linalg.norm(c[(i + 2) % 4] - b))
-                off = max(min(prof / 2 - mm(sposta_mm, sc), prof - mm(5, sc)), mm(5, sc))
+                for off in (d_lab + ingombro, d_lab - ingombro):
+                    if mm(5, sc) <= off <= prof - mm(5, sc):
+                        break
+                else:
+                    off = mm(6, sc)
                 P.ent.extend(quota_allineata(P.msp, P.T(a), P.T(b), off, ds))
+                fatti.add(verticale)
         else:
             c = list(pol.exterior.coords)
             for a, b in ((a, b) for a, b in zip(c, c[1:]) if math.dist(a, b) > 0.3):
