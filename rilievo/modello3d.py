@@ -177,6 +177,56 @@ def facce(ed: Edificio) -> list[Faccia]:
         sotto = (top - [0, 0, sp])[::-1]  # intradosso, normale verso il basso
         out.append(Faccia(sotto, "intradosso_falda", materiale=f.struttura, rif_id=f.id, ipotesi=ipot))
         for a, b in zip(top, np.roll(top, -1, axis=0)):
-            bordo = np.array([a, b, b - [0, 0, sp], a - [0, 0, sp]])
+            bordo = np.array([a, a - [0, 0, sp], b - [0, 0, sp], b])  # normale verso l'esterno della falda
             out.append(Faccia(bordo, "bordo_falda", materiale=f.manto, rif_id=f.id, ipotesi=ipot))
+    return out + _muri_emergenti(ed)
+
+
+def _muri_emergenti(ed: Edificio) -> list[Faccia]:
+    """Muratura che sale sopra una copertura piu' bassa per sostenere la testata di una piu' alta (es. tetto
+    a una falda appoggiato al timpano del vicino): senza, sotto la testata si vedrebbe un vuoto."""
+    from shapely.geometry import Point
+    pol = {f.id: Polygon(f.poligono) for f in ed.falde}
+    muri = ingombro_muri(ed).buffer(0.02)  # la muratura sale solo sopra un muro, non sotto gli sporti
+    out = []
+    for f in ed.falde:
+        sp = f.spessore.valore
+        altre = [g for g in ed.falde if g.id != f.id]
+        if not altre:
+            continue
+        cc = f.poligono + f.poligono[:1]
+        for a, b in zip(cc, cc[1:]):
+            lato = LineString([a, b])
+            L = lato.length
+            if L < 1e-6:
+                continue
+            ss = {0.0, L}
+            for g in altre:
+                inter = lato.intersection(pol[g.id].boundary)
+                for q in getattr(inter, "geoms", [inter]):
+                    for c in getattr(q, "coords", []):
+                        ss.add(min(max(lato.project(Point(c)), 0.0), L))
+            ss = sorted(ss)
+            fondo = []
+            for t0, t1 in zip(ss, ss[1:]):  # in ogni tratto la falda sottostante e' la stessa
+                if t1 - t0 < 1e-6:
+                    continue
+                m = lato.interpolate((t0 + t1) / 2)
+                dx, dy = b[0] - a[0], b[1] - a[1]
+                dentro = Point(m.x - 0.05 * dy / L, m.y + 0.05 * dx / L)  # falda antioraria: interno a sinistra
+                # la falda bassa deve stare oltre il bordo, non sotto la nostra (sporto sopra un altro tetto)
+                sotto = [g for g in altre if pol[g.id].buffer(1e-3).covers(m) and not pol[g.id].covers(dentro)] \
+                    if muri.covers(m) else []
+                for t in (t0, t1):
+                    q = lato.interpolate(t)
+                    cima = z_falda(f, q.x, q.y) - sp
+                    zs = [z_falda(g, q.x, q.y) for g in sotto]
+                    fondo.append((q.x, q.y, min(max(zs), cima) if zs else cima))
+            if max(z_falda(f, x, y) - sp - z for x, y, z in fondo) < 0.01:
+                continue
+            ta = (a[0], a[1], z_falda(f, *a) - sp)
+            tb = (b[0], b[1], z_falda(f, *b) - sp)
+            pts = np.array([ta] + fondo + [tb])  # stesso verso del bordo: normale verso l'esterno
+            out.append(Faccia(pts, "parete_est", materiale="muratura", rif_id=f.id,
+                              ipotesi=any(q.ipotesi for q in f.quote)))
     return out

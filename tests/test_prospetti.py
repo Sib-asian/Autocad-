@@ -98,3 +98,25 @@ def test_quote_livello_vicine_non_si_accavallano():
     assert all(b - a >= mm(4.5, 50) - 1e-9 for a, b in zip(zs, zs[1:])), zs
     testi = {e.dxf.text for e in doc.modelspace().query("TEXT")}
     assert "+4,17" in testi and "±0,00" in testi  # estremi sempre presenti
+
+
+def test_muri_complanari_senza_linea_interna_e_rosso_solo_sulle_aperture():
+    """Due corpi con la facciata sullo stesso piano: nessuna linea verticale nel mezzo della parete;
+    le ipotesi della copertura non colorano di rosso tutto il prospetto."""
+    from rilievo.costruttore import costruisci
+    ed = costruisci({"spessori": {"esterni": 0.4, "interni": 0.3},
+                     "locali": [{"nome": "A", "larghezza": 4.0, "profondita": 3.0, "h_min": 2.7},
+                                {"nome": "B", "a_destra_di": "A", "larghezza": 3.0, "profondita": 3.0, "h_min": 2.7}],
+                     "coperture": [{"locali": ["A", "B"], "tipo": "una_falda", "bassa": "sud", "h_alta": 3.2,
+                                    "h_bassa": 2.7, "ipotesi": "stimato"}]})
+    v = [x for x in lati_prospetto(ed) if x.nome == "Prospetto Sud"][0]
+    doc = nuovo_documento(50)
+    disegna_prospetto(ed, v, doc.modelspace(), scala=50, quote=False, titolo=False)
+    rossi = doc.modelspace().query('*[layer=="IPOTESI_DA_VERIFICARE"]')
+    assert len(rossi) == 0
+    # nessun segmento verticale di dettaglio interno alla parete (tra x=0,5 e x=7,5 dal bordo, sotto la gronda)
+    import numpy as np
+    for e in doc.modelspace().query('LWPOLYLINE[layer=="PROSPETTI_DETTAGLI"]'):
+        pts = np.array([p[:2] for p in e.get_points()])
+        if len(pts) == 2 and abs(pts[0, 0] - pts[1, 0]) < 1e-6 and pts[:, 1].max() < 2.5:
+            assert not (0.5 < pts[0, 0] < 7.5), pts

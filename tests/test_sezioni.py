@@ -72,3 +72,17 @@ def test_trave_vista_nella_sezione_lungo_la_pendenza(ed_scatola):
     from rilievo.genera.sezioni import stratigrafia_copertura
     s = stratigrafia_copertura(ed_scatola, SEZ)
     assert not s.travi_tagliate and len(s.travi_viste) == 2  # una per falda
+
+
+def test_tavola_sezioni_con_schema_delle_tracce():
+    """La tavola delle sezioni porta una piccola pianta con le tracce dei tagli (scala 1:200 se tavole 1:50)."""
+    from rilievo.banco.caso import genera_caso
+    from rilievo.genera.tavola import componi_tavole
+    ed = genera_caso(7)
+    t = componi_tavole(ed, tavole={"sezioni"})
+    testi = [e.dxf.text for e in t.doc.modelspace().query("TEXT")]
+    assert any(x.startswith("SCHEMA DELLE SEZIONI") and "1:200" in x for x in testi)
+    foglio = t.fogli[0]
+    x0, y0, x1, y1 = foglio.bbox
+    for e in t.doc.modelspace().query("TEXT"):  # tutto dentro il foglio
+        assert x0 <= e.dxf.insert.x <= x1 and y0 <= e.dxf.insert.y <= y1

@@ -194,7 +194,8 @@ def _aperture(dati: dict, locali: dict[str, _Locale], muri: list[Muro]) -> list[
             a=V(valore=round(s1, 3)), altezza=V.model_validate(spec["altezza"]),
             davanzale=V.model_validate(spec.get("davanzale", 0.0)), tipo=tipo,
             forma=spec.get("forma", "rettangolare"), lato=lato_porta,
-            battente=spec.get("battente", "doppio" if tipo == "porta" and w > 1.05 else "sx")))
+            battente=spec.get("battente", "doppio" if tipo == "porta" and w > 1.05 else "sx"),
+            infisso=spec.get("infisso", "")))
     return out
 
 
@@ -224,37 +225,71 @@ def _piano_copertura(c: dict, stanze) -> tuple:
     raise ValueError(f"Tipo di copertura sconosciuto: {c['tipo']} (capanna | una_falda)")
 
 
+def _semipiano(a, b, verso_b: bool):
+    """Semipiano delimitato dalla retta per a perpendicolare ad a->b: dalla parte di b (verso_b) o opposta."""
+    from shapely.geometry import Polygon as P
+    dx, dy = b.x - a.x, b.y - a.y
+    d = (dx * dx + dy * dy) ** 0.5
+    if d < 1e-6:
+        return None
+    nx, ny = dx / d, dy / d
+    if not verso_b:
+        nx, ny = -nx, -ny
+    tx, ty, G = -ny, nx, 1000.0
+    return P([(a.x + G * tx, a.y + G * ty), (a.x + G * tx + G * nx, a.y + G * ty + G * ny),
+              (a.x - G * tx + G * nx, a.y - G * ty + G * ny), (a.x - G * tx, a.y - G * ty)])
+
+
 def _coperture(dati: dict, locali: dict[str, _Locale]) -> list[Falda]:
     """Falde: ogni copertura copre i propri locali con i loro muri e sporge verso l'esterno. Dove due
     coperture si incontrano, la piu' alta copre il muro in comune (e sporge sopra l'altra), la piu' bassa
-    si ferma contro il muro."""
+    si ferma contro il muro; con si_appoggia_a la piu' alta non sporge sopra quella appoggiata.
+    sporto_timpani fissa lo sporto sui timpani e sulle testate delle falde, diverso da quello di gronda."""
     from shapely.ops import nearest_points
     gruppi = []
     for c in dati.get("coperture", []):
         grp = [locali[n] for n in c["locali"]]
         stanze = unary_union([l.pol for l in grp])
         z, tagli = _piano_copertura(c, stanze)
-        base = unary_union([_contorno_esterno(l) for l in grp])
+        contorno = unary_union([_contorno_esterno(l) for l in grp])
         sporto = float(c.get("sporto", 0.0))
-        if sporto > 0:
-            base = base.buffer(sporto, join_style="mitre")
-        gruppi.append((c, grp, stanze, z, tagli, base))
+        base = contorno.buffer(sporto, join_style="mitre") if sporto > 0 else contorno
+        st = c.get("sporto_timpani")
+        if st is not None:  # testate/timpani (es. in pietra con copertina) a filo muro o con sporto proprio
+            from shapely.geometry import box
+            cx0, cy0, cx1, cy1 = contorno.bounds
+            st, G = float(st), 1000.0
+            lungo_x = (c.get("colmo", "x") == "x") if c["tipo"] == "capanna" else c.get("bassa") in ("nord", "sud")
+            base = base.intersection(box(cx0 - st, -G, cx1 + st, G) if lungo_x else box(-G, cy0 - st, G, cy1 + st))
+        gruppi.append((c, grp, stanze, z, tagli, base, contorno))
     falde = []
-    for i, (c, grp, stanze, z, tagli, base) in enumerate(gruppi, start=1):
-        for c2, grp2, stanze2, z2, _, _ in gruppi:
+    for i, (c, grp, stanze, z, tagli, base, contorno) in enumerate(gruppi, start=1):
+        for c2, grp2, stanze2, z2, _, _, _ in gruppi:
             if c2 is c:
                 continue
+            ci_appoggia = any(l.nome in c2.get("si_appoggia_a", []) for l in grp)
             for o in grp2:
                 gap = stanze.distance(o.pol)
                 if gap >= 1.0:
                     continue
                 p1, p2 = nearest_points(stanze, o.pol)
                 mx, my = (p1.x + p2.x) / 2, (p1.y + p2.y) / 2
-                if z(mx, my) < z2(mx, my) - 1e-6:  # siamo piu' bassi: ci fermiamo contro il muro
-                    muro_alto = o.pol.buffer(gap, join_style="mitre").union(
-                        _contorno_esterno(o).buffer(float(c.get("sporto", 0.0)) + 0.01, join_style="mitre")
-                        .difference(stanze.buffer(gap / 2, join_style="mitre")))
-                    base = base.difference(muro_alto)
+                if ci_appoggia:
+                    # l'altra copertura si appoggia al nostro muro: lo copriamo noi, ma non sporgiamo sopra di
+                    # lei (il manto prosegue senza gradino, come nelle foto). Il confine e' la faccia del muro
+                    # dalla sua parte.
+                    lato_suo = _semipiano(p2, p1, verso_b=False)
+                    if lato_suo is not None:
+                        sp2 = float(c2.get("sporto", 0.0)) + 0.01
+                        base = base.difference(lato_suo.intersection(
+                            _contorno_esterno(o).buffer(sp2, join_style="mitre")))
+                    continue
+                appoggio = o.nome in c.get("si_appoggia_a", [])  # indicato nel rilievo (es. dalle foto)
+                if appoggio or z(mx, my) < z2(mx, my) - 1e-6:  # piu' bassi o in appoggio: ci fermiamo al muro
+                    lato_nostro = _semipiano(p1, p2, verso_b=False)
+                    if lato_nostro is not None:  # fino alla faccia del muro dalla nostra parte, gronde comprese
+                        base = base.intersection(lato_nostro)
+                    base = base.difference(o.pol.buffer(gap, join_style="mitre"))
                 elif abs(z(mx, my) - z2(mx, my)) <= 1e-6:  # stessa quota: a meta' del muro
                     base = base.difference(o.pol.buffer(gap / 2, join_style="mitre"))
         sp = float(c.get("spessore", 0.30))

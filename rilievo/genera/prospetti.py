@@ -86,10 +86,21 @@ def disegna_pezzi(ed, nome, sinistra, destra, pezzi: list[Pezzo], msp, scala, or
     lay_contorno = "PROSPETTI_CONTORNO" if tagliati is None else "SEZ_VISTO"
     lay_dett = "PROSPETTI_DETTAGLI" if tagliati is None else "SEZ_VISTO"
 
-    # --- spigoli visibili (sottili), senza doppioni
-    bordi = unary_union([p.poligono2d.boundary for p in pezzi if p.faccia.tipo != "infisso"])
-    for ln in _linee(bordi):
-        P.poly(list(ln.coords), lay_dett)
+    # --- spigoli visibili: le superfici sullo stesso piano si fondono (nessuna linea interna fra corpi
+    #     allineati), il sottotetto non si disegna, i segmenti minuscoli si scartano
+    piani: dict = {}
+    for p in pezzi:
+        if p.faccia.tipo in ("infisso", "intradosso_falda"):
+            continue
+        n = p.faccia.normale
+        chiave = (p.faccia.tipo == "falda", tuple(np.round(n, 3)), round(float(n @ p.faccia.pts[0]), 3))
+        piani.setdefault(chiave, []).append(p.poligono2d)
+    contorni = [unary_union(g).buffer(0.002, join_style="mitre").buffer(-0.002, join_style="mitre")
+                for g in piani.values()]
+    bordi = unary_union([c.boundary for c in contorni if not c.is_empty])
+    for ln in _linee(bordi.simplify(0.003)):
+        if ln.length >= 0.02:
+            P.poly(list(ln.coords), lay_dett)
     # --- infissi: telaio e ante
     for p in pezzi:
         if p.faccia.tipo == "infisso":
@@ -102,9 +113,9 @@ def disegna_pezzi(ed, nome, sinistra, destra, pezzi: list[Pezzo], msp, scala, or
     if tagliati is None:
         for pol in _poligoni(sil):
             P.poly(list(pol.exterior.coords), lay_contorno)
-    # --- ipotesi in rosso
+    # --- ipotesi in rosso: solo le aperture con misure stimate (le ipotesi sul tetto sono nelle note)
     for p in pezzi:
-        if p.faccia.ipotesi:
+        if p.faccia.tipo == "infisso" and p.faccia.ipotesi:
             for pol in _poligoni(p.poligono2d):
                 P.poly(list(pol.exterior.coords), "IPOTESI_DA_VERIFICARE")
     # --- terreno
@@ -123,7 +134,7 @@ def disegna_pezzi(ed, nome, sinistra, destra, pezzi: list[Pezzo], msp, scala, or
         _quote_livello(P, sorted(livelli), minx, sc)
         punti = [(maxx, z) for z in sorted(livelli)]
         if len(punti) >= 2:
-            c = catena(msp, [P.T(q) for q in punti], (0, 1), -mm(10, sc), ds, min_parziale=mm(4.5, sc))
+            c = catena(msp, [P.T(q) for q in punti], (0, 1), -mm(10, sc), ds, min_parziale=mm(7.5, sc))  # testo leggibile
             P.ent.extend(c.entita)
         xs = {minx, maxx}
         for p in pezzi:
@@ -156,7 +167,7 @@ def _livelli(ed: Edificio, pezzi, zt) -> set[float]:
         elif p.faccia.tipo == "falda":
             z.add(round(p.poligono2d.bounds[3], 4))
         elif p.faccia.tipo == "bordo_falda":  # estradosso: gronda (punto basso) e colmo (punto alto)
-            top = p.faccia.pts[:2, 2]
+            top = p.faccia.pts[[0, -1], 2]  # i due vertici in alto (a e b) del bordo
             z |= {round(float(top.min()), 4), round(float(top.max()), 4)}
     return z
 
@@ -195,6 +206,15 @@ def _infisso(P: _Penna, ed: Edificio, p: Pezzo, layer):
             xm = (x0 + x1) / 2
             for ln in _linee(LineString([(xm, z0), (xm, z1)]).intersection(telaio)):
                 P.poly(list(ln.coords), layer)
+        if ap is not None and "grata" in ap.infisso.lower():  # grata a losanghe
+            passo = 0.16
+            righe = []
+            for k in np.arange(-(z1 - z0), (x1 - x0) + (z1 - z0), passo):
+                righe.append([(x0 + k, z0), (x0 + k + (z1 - z0), z1)])
+                righe.append([(x0 + k + (z1 - z0), z0), (x0 + k, z1)])
+            for ln in _linee(MultiLineString(righe).intersection(telaio)):
+                P.poly(list(ln.coords), "PROSPETTI_DETTAGLI")
+            continue
         if ap is not None and ap.tipo == "porta":
             # doghe verticali del portone in legno
             n = max(2, int(w / 0.12))

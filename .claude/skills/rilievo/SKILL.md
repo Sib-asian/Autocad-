@@ -40,7 +40,9 @@ Disegni imprecisi: interpretali con buon senso da tecnico, non ricalcarli.
 4. **Modello.** Scrivi il rilievo per locali in `modello/rilievo.yaml` (come si misura: locali con dimensioni
    interne e posizione reciproca, spessori, aperture con progressive dal punto 0, coperture con H min/H max;
    esempio `esempi/rilievo_caso_2031.yaml`) e lancia `rilievo costruisci <pratica>`: muri, falde e sezioni
-   si calcolano da soli. Scrivi `edificio.yaml` a mano solo per forme che la descrizione per locali non copre
+   si calcolano da soli. La forma dei tetti si legge dalle foto (sommita' dei muri, timpani, gronde): un tetto
+   che poggia sul muro del vicino ha `si_appoggia_a: [locale]`, timpani in pietra a filo muro `sporto_timpani: 0`.
+   Scrivi `edificio.yaml` a mano solo per forme che la descrizione per locali non copre
    (schema: `rilievo/modello.py`). `rilievo verifica <pratica>` deve dare "Dati del modello: OK".
    Pratiche con piu' stati: `legittimo.yaml` (sanatoria) o `progetto.yaml` (CILA/SCIA/permesso) accanto a
    `edificio.yaml`, oppure `stato: demolire|nuovo` su muri e aperture; il tipo di pratica sceglie le tavole.

@@ -101,8 +101,11 @@ class _Penna:
 
 
 def disegna_pianta(ed: Edificio, msp, scala: int = 50, origine=(0.0, 0.0), quote: bool = True,
-                   titolo: str | None = "PIANTA") -> Ingombro:
+                   titolo: str | None = "PIANTA", schema: bool = False) -> Ingombro:
+    """schema=True: pianta essenziale (muri, aperture, nomi dei locali, linee di sezione) per lo schema di
+    riferimento delle sezioni."""
     P = _Penna(msp, origine, scala)
+    P.schema = schema
     ds = aggiungi_dimstyle(msp.doc, scala)
     tagliati = poligoni_muri(ed, con_aperture=True)
 
@@ -126,14 +129,14 @@ def disegna_pianta(ed: Edificio, msp, scala: int = 50, origine=(0.0, 0.0), quote
         _disegna_apertura(P, ed, ap)
 
     # --- elementi (forni, camini, scale...)
-    for el in ed.elementi:
+    for el in ([] if schema else ed.elementi):
         if el.poligono:
             P.poly(el.poligono, "ELEMENTI", chiusa=True)
             c = Polygon(el.poligono).representative_point()
             P.testo(el.tipo, (c.x, c.y), 1.8, "ELEMENTI")
 
     # --- copertura proiettata (solo se sporge dai muri)
-    if ed.falde:
+    if ed.falde and not schema:
         tetto = unary_union([Polygon(f.poligono) for f in ed.falde])
         muri_pieni = unary_union(list(poligoni_muri(ed, con_aperture=False).values()))
         sagoma = unary_union([Polygon(p.exterior) for p in _poligoni(muri_pieni)])
@@ -153,6 +156,9 @@ def disegna_pianta(ed: Edificio, msp, scala: int = 50, origine=(0.0, 0.0), quote
         ipot = loc.h_min.ipotesi or (loc.h_max is not None and loc.h_max.ipotesi)
         lay = "IPOTESI_DA_VERIFICARE" if ipot else "TESTI"
         dz = mm(4.2, scala)
+        if schema:
+            P.testo(loc.nome.upper(), (c.x, c.y), 2.2)
+            continue
         P.testo(loc.nome.upper(), (c.x, c.y + dz), 3.0)
         P.testo(f"S = {fmt(pol.area)} m²", (c.x, c.y), 2.2)
         P.testo(htxt + (" (*)" if ipot else ""), (c.x, c.y - dz), 2.0, lay)
@@ -172,6 +178,19 @@ def disegna_pianta(ed: Edificio, msp, scala: int = 50, origine=(0.0, 0.0), quote
         P.testo(f"{titolo}  scala 1:{scala}", ((ing.minx + ing.maxx) / 2 - P.o[0], ing.miny - P.o[1] - mm(10, scala)),
                 4.0, "TESTI")
     return Ingombro.da_entita(P.ent)
+
+
+def disegna_schema_sezioni(ed: Edificio, msp, scala: int = 50, origine=(0.0, 0.0), rapporto: int = 4) -> Ingombro:
+    """Piccola pianta (scala 1:scala*rapporto) con le tracce delle sezioni, da mettere nella tavola delle sezioni:
+    chi legge la tavola vede subito dove sono stati fatti i tagli."""
+    from ezdxf.math import Matrix44
+    prima = {e.dxf.handle for e in msp}
+    disegna_pianta(ed, msp, scala * rapporto, (0.0, 0.0), quote=False, titolo="SCHEMA DELLE SEZIONI", schema=True)
+    nuove = [e for e in msp if e.dxf.handle not in prima]
+    m = Matrix44.scale(1 / rapporto, 1 / rapporto, 1) @ Matrix44.translate(origine[0], origine[1], 0)
+    for e in nuove:
+        e.transform(m)
+    return Ingombro.da_entita(nuove)
 
 
 def _disegna_apertura(P: _Penna, ed: Edificio, ap):
@@ -213,7 +232,8 @@ def _disegna_apertura(P: _Penna, ed: Edificio, ap):
             P.linea(a + n * h * k, b + n * h * k, "APERTURE_NASCOSTE")
     if lay_i:
         P.poly([a + n * h, b + n * h, b - n * h, a - n * h], lay_i, chiusa=True)
-    _etichetta_apertura(P, ed, ap, a, b, n, h, lay_i or "TESTI")
+    if not getattr(P, "schema", False):
+        _etichetta_apertura(P, ed, ap, a, b, n, h, lay_i or "TESTI")
 
 
 def _etichetta_apertura(P: _Penna, ed: Edificio, ap, a, b, n, h, layer):

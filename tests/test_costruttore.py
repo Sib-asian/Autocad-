@@ -72,3 +72,48 @@ def test_spessori_diversi_per_lato():
     from rilievo.genera.tabelle import sagoma
     minx, miny, maxx, maxy = sagoma(ed).bounds
     assert minx == pytest.approx(-0.35) and miny == pytest.approx(-0.49)
+
+
+def test_copertura_che_si_appoggia_al_vicino():
+    d = _dati(coperture=[
+        {"locali": ["A"], "tipo": "una_falda", "bassa": "ovest", "h_alta": 3.5, "h_bassa": 2.2, "spessore": 0.3,
+         "sporto": 0.2, "si_appoggia_a": ["B"]},
+        {"locali": ["B"], "tipo": "capanna", "colmo": "x", "h_imposta": 2.7, "h_colmo": 3.5, "spessore": 0.3,
+         "sporto": 0.2}])
+    ed = costruisci(d)
+    from shapely.geometry import Polygon
+    falde_a = [f for f in ed.falde if f.id.startswith("T1")]
+    # la falda di A si ferma alla faccia interna del muro verso B (x = 4,00): non copre il muro in comune
+    assert max(max(x for x, _ in f.poligono) for f in falde_a) == pytest.approx(4.0, abs=1e-3)
+
+
+def test_la_copertura_alta_non_sporge_sopra_quella_che_le_si_appoggia():
+    """Dove un tetto si appoggia al muro del vicino, il vicino non deve sporgere sopra di lui (dalle foto: il
+    manto prosegue senza gradino); i timpani in pietra non hanno sporto se sporto_timpani = 0."""
+    d = _dati(coperture=[
+        {"locali": ["A"], "tipo": "una_falda", "bassa": "ovest", "h_alta": 3.5, "h_bassa": 2.2, "spessore": 0.3,
+         "sporto": 0.2, "si_appoggia_a": ["B"]},
+        {"locali": ["B"], "tipo": "capanna", "colmo": "x", "h_imposta": 2.7, "h_colmo": 3.5, "spessore": 0.3,
+         "sporto": 0.2, "sporto_timpani": 0.0}])
+    ed = costruisci(d)
+    falde_b = [f for f in ed.falde if f.id.startswith("T2")]
+    xs = [x for f in falde_b for x, _ in f.poligono]
+    ys = [y for f in falde_b for _, y in f.poligono]
+    assert min(xs) >= 4.0 - 1e-3          # niente sporto sopra il locale A
+    assert max(xs) == pytest.approx(7.70, abs=1e-3)  # timpano est a filo muro (7,30 + 0,40)
+    assert min(ys) == pytest.approx(-0.60, abs=1e-3)  # la gronda invece sporge (0,40 + 0,20)
+
+
+def test_testate_delle_falde_rivolte_verso_l_esterno():
+    """Il bordo (testata) della falda deve essere visibile da fuori: se e' rivolto verso l'interno il
+    prospetto mostra l'interno dell'edificio sotto la gronda."""
+    from shapely.geometry import Point, Polygon
+    from rilievo.modello3d import facce
+    d = _dati(coperture=[{"locali": ["A", "B"], "tipo": "capanna", "colmo": "x", "h_imposta": 2.7,
+                          "h_colmo": 3.5, "spessore": 0.3, "sporto": 0.2}])
+    ed = costruisci(d)
+    falde = {f.id: Polygon(f.poligono) for f in ed.falde}
+    for f in facce(ed):
+        if f.tipo == "bordo_falda":
+            c = f.pts.mean(axis=0)
+            assert not falde[f.rif_id].contains(Point(c[0] + 0.01 * f.normale[0], c[1] + 0.01 * f.normale[1]))

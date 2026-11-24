@@ -60,37 +60,41 @@ aperture:
   muro: M3
   da: 0.665
   a: 2.165
-  altezza: {valore: 1.0, fonte: ipotesi, nota: stimata dalle foto}
-  davanzale: {valore: 1.0, fonte: ipotesi, nota: stimato dalle foto}
-- {id: P1, muro: M3, da: 3.815, a: 5.815, altezza: 2.2, tipo: porta, battente: doppio}
+  altezza: {valore: 1.5, fonte: ipotesi, nota: 'foto 11: finestra alta quasi quanto la porta'}
+  davanzale: {valore: 0.7, fonte: ipotesi, nota: foto 11}
+  infisso: ante in ferro
+- {id: P1, muro: M3, da: 3.815, a: 5.815, altezza: 2.2, tipo: porta, battente: doppio, infisso: ferro e vetro}
 - id: F2
   muro: M1
   da: 0.685
   a: 2.185
-  altezza: {valore: 1.0, fonte: ipotesi, nota: stimata dalle foto (finestra con grata)}
-  davanzale: {valore: 1.0, fonte: ipotesi, nota: stimato dalle foto}
+  altezza: {valore: 0.8, fonte: ipotesi, nota: 'foto 2 e 19: finestra bassa e larga con grata'}
+  davanzale: {valore: 1.1, fonte: ipotesi, nota: foto 19}
   lato: '-'
+  infisso: grata
 - id: P2
   muro: M3
   da: 8.385
   a: 9.535
-  altezza: {valore: 2.2, fonte: ipotesi, nota: come la porta del Vano 1}
+  altezza: {valore: 2.2, fonte: ipotesi, nota: 'foto 12-13: rapporto con la larghezza 1,15'}
   tipo: porta
+  forma: arco_ribassato
   battente: doppio
-- {id: P3, muro: M4, da: 2.655, a: 3.555, altezza: 1.8, tipo: porta, lato: '-'}
+  infisso: legno
+- {id: P3, muro: M4, da: 2.655, a: 3.555, altezza: 1.8, tipo: porta, forma: arco, lato: '-'}
 - id: P4
   muro: M6
   da: 0.35
   a: 1.2
-  altezza: {valore: 2.0, fonte: ipotesi, nota: stimata dalle foto (portone in legno)}
+  altezza: {valore: 2.0, fonte: ipotesi, nota: foto 17}
   tipo: porta
   lato: '-'
 - id: F3
   muro: M2
   da: 2.465
   a: 2.865
-  altezza: {valore: 0.4, fonte: ipotesi, nota: stimata}
-  davanzale: {valore: 1.2, fonte: ipotesi, nota: stimato}
+  altezza: {valore: 0.4, fonte: ipotesi, nota: foto 10}
+  davanzale: {valore: 1.4, fonte: ipotesi, nota: foto 10}
   lato: '-'
 locali:
 - id: L1
@@ -111,68 +115,57 @@ locali:
 falde:
 - id: T11
   poligono:
-  - [-0.5, -0.64]
-  - [3.175, -0.64]
-  - [3.175, 4.46]
+  - [6.35, 4.46]
   - [-0.5, 4.46]
+  - [-0.5, -0.64]
+  - [6.35, -0.64]
   quote:
-  - {valore: 2.1323, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto (0,15) stimati dalle foto'}
   - {valore: 4.1, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto (0,15) stimati dalle foto'}
+  - {valore: 2.2661, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto (0,15) stimati dalle foto'}
+  - {valore: 2.2661, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto (0,15) stimati dalle foto'}
   - {valore: 4.1, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto (0,15) stimati dalle foto'}
-  - {valore: 2.1323, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto (0,15) stimati dalle foto'}
-  spessore: {valore: 0.3, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto (0,15) stimati dalle foto'}
-- id: T12
-  poligono:
-  - [5.58, 3.71]
-  - [5.58, 4.46]
-  - [3.175, 4.46]
-  - [3.175, -0.64]
-  - [6.09, -0.64]
-  - [6.09, -0.175]
-  - [6.35, -0.175]
-  - [6.35, 3.71]
-  quote:
-  - {valore: 2.8123, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto (0,15) stimati dalle foto'}
-  - {valore: 2.8123, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto (0,15) stimati dalle foto'}
-  - {valore: 4.1, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto (0,15) stimati dalle foto'}
-  - {valore: 4.1, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto (0,15) stimati dalle foto'}
-  - {valore: 2.5392, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto (0,15) stimati dalle foto'}
-  - {valore: 2.5392, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto (0,15) stimati dalle foto'}
-  - {valore: 2.4, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto (0,15) stimati dalle foto'}
-  - {valore: 2.4, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto (0,15) stimati dalle foto'}
   spessore: {valore: 0.3, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto (0,15) stimati dalle foto'}
 - id: T21
   poligono:
-  - [6.1, 4.46]
-  - [6.1, -0.64]
-  - [11.15, -0.64]
-  - [11.15, 4.46]
+  - [6.35, 1.905]
+  - [6.35, -0.64]
+  - [11.0, -0.64]
+  - [11.0, 1.905]
   quote:
-  - {valore: 4.2365, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto (0,15) stimati dalle foto'}
-  - {valore: 3.1656, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto (0,15) stimati dalle foto'}
-  - {valore: 3.1656, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto (0,15) stimati dalle foto'}
-  - {valore: 4.2365, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto (0,15) stimati dalle foto'}
-  spessore: {valore: 0.3, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto (0,15) stimati dalle foto'}
+  - {valore: 4.1, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto di gronda (0,15) stimati dalle foto'}
+  - {valore: 3.0312, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto di gronda (0,15) stimati dalle foto'}
+  - {valore: 3.0312, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto di gronda (0,15) stimati dalle foto'}
+  - {valore: 4.1, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto di gronda (0,15) stimati dalle foto'}
+  spessore: {valore: 0.3, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto di gronda (0,15) stimati dalle
+      foto'}
+- id: T22
+  poligono:
+  - [6.35, 4.31]
+  - [6.35, 1.905]
+  - [11.0, 1.905]
+  - [11.0, 4.31]
+  quote:
+  - {valore: 3.09, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto di gronda (0,15) stimati dalle foto'}
+  - {valore: 4.1, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto di gronda (0,15) stimati dalle foto'}
+  - {valore: 4.1, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto di gronda (0,15) stimati dalle foto'}
+  - {valore: 3.09, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto di gronda (0,15) stimati dalle foto'}
+  spessore: {valore: 0.3, fonte: ipotesi, nota: 'spessore del tetto (0,30) e sporto di gronda (0,15) stimati dalle
+      foto'}
 - id: T31
   poligono:
+  - [6.03, 4.31]
+  - [11.0244, 4.31]
+  - [11.0244, 5.2542]
   - [10.7981, 7.72]
-  - [5.93, 7.72]
-  - [5.93, 4.06]
-  - [6.2, 4.06]
-  - [6.2, 4.31]
-  - [11.05, 4.31]
-  - [11.05, 4.06]
-  - [11.134, 4.06]
+  - [6.03, 7.72]
   quote:
-  - {valore: 2.1748, fonte: ipotesi, nota: 'spessore del tetto (0,20) e sporto (0,10) stimati dalle foto'}
-  - {valore: 2.1748, fonte: ipotesi, nota: 'spessore del tetto (0,20) e sporto (0,10) stimati dalle foto'}
-  - {valore: 3.2752, fonte: ipotesi, nota: 'spessore del tetto (0,20) e sporto (0,10) stimati dalle foto'}
-  - {valore: 3.2752, fonte: ipotesi, nota: 'spessore del tetto (0,20) e sporto (0,10) stimati dalle foto'}
-  - {valore: 3.2, fonte: ipotesi, nota: 'spessore del tetto (0,20) e sporto (0,10) stimati dalle foto'}
-  - {valore: 3.2, fonte: ipotesi, nota: 'spessore del tetto (0,20) e sporto (0,10) stimati dalle foto'}
-  - {valore: 3.2752, fonte: ipotesi, nota: 'spessore del tetto (0,20) e sporto (0,10) stimati dalle foto'}
-  - {valore: 3.2752, fonte: ipotesi, nota: 'spessore del tetto (0,20) e sporto (0,10) stimati dalle foto'}
-  spessore: {valore: 0.2, fonte: ipotesi, nota: 'spessore del tetto (0,20) e sporto (0,10) stimati dalle foto'}
+  - {valore: 3.1, fonte: ipotesi, nota: 'spessore del tetto (0,10) e sporto di gronda (0,10) stimati dalle foto'}
+  - {valore: 3.1, fonte: ipotesi, nota: 'spessore del tetto (0,10) e sporto di gronda (0,10) stimati dalle foto'}
+  - {valore: 2.8161, fonte: ipotesi, nota: 'spessore del tetto (0,10) e sporto di gronda (0,10) stimati dalle foto'}
+  - {valore: 2.0748, fonte: ipotesi, nota: 'spessore del tetto (0,10) e sporto di gronda (0,10) stimati dalle foto'}
+  - {valore: 2.0748, fonte: ipotesi, nota: 'spessore del tetto (0,10) e sporto di gronda (0,10) stimati dalle foto'}
+  spessore: {valore: 0.1, fonte: ipotesi, nota: 'spessore del tetto (0,10) e sporto di gronda (0,10) stimati dalle
+      foto'}
 sezioni:
 - nome: A
   p0: [-1.5, 1.9]

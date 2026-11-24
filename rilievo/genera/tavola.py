@@ -113,7 +113,11 @@ def _viste_prospetti(ed: Edificio, scala: int) -> list[Vista]:
 
 
 def _viste_sezioni(ed: Edificio, scala: int) -> list[Vista]:
-    return [(lambda ss: (lambda m, o: disegna_sezione(ed, ss, m, scala, o)))(s) for s in ed.sezioni]
+    from .pianta import disegna_schema_sezioni
+    v = [(lambda ss: (lambda m, o: disegna_sezione(ed, ss, m, scala, o)))(s) for s in ed.sezioni]
+    if v and ed.muri:  # schema planimetrico con le tracce dei tagli
+        v.append(lambda m, o: disegna_schema_sezioni(ed, m, scala, o))
+    return v
 
 
 def _gruppi_stato(ed: Edificio, scala: int, nome: str, completo: bool = True):
