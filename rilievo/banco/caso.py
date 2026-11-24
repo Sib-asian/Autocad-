@@ -70,7 +70,7 @@ def genera_caso(seed: int) -> Edificio:
     colmo = round(gronda + _r(rng, 0.8, 1.2), 2)
     sp = 0.30
     ym = D / 2
-    xmax = xe_n + te / 2 + 0.05
+    xmax = xe_n + te + 0.30  # la copertura sporge anche oltre il muro storto
     e = te / 2 + 0.25  # sporto di gronda
     falde = [
         Falda(id="T1", poligono=[(-te, ys - e + h), (xmax, ys - e + h), (xmax, ym), (-te, ym)],

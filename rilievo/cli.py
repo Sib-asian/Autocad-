@@ -69,6 +69,10 @@ def cmd_genera(a) -> int:
         print("Impossibile comporre le tavole:", e)
         return 2
     out = esporta(t, base / "output", base.resolve().name, dwg=not a.no_dwg)
+    if ed.foto:
+        from .genera.perizia import documentazione_fotografica_pdf
+        out["foto"] = documentazione_fotografica_pdf(ed, base / "output" / "documentazione_fotografica.pdf",
+                                                     base=base)
     rep = verifica(ed, t, dwg=out.get("dwg"))
     (base / "output" / "verifica.md").write_text(rep.markdown(), encoding="utf-8")
     (base / "output" / "registro_ipotesi.md").write_text(registro(ed), encoding="utf-8")

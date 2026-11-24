@@ -261,4 +261,5 @@ def _lesioni(P: _Penna, ed: Edificio, vista: Vista):
             pts.append((float(np.array([q[0], q[1], 0.0]) @ r), z))
         P.poly(pts, "DEGRADO")
         if pts:
-            P.testo(les.id, (pts[0][0] + mm(2, P.scala), pts[0][1]), 1.8, "DEGRADO", "MIDDLE_LEFT")
+            etichetta = les.id + (f" ({les.ampiezza_mm:g} mm)" if les.ampiezza_mm is not None else "")
+            P.testo(etichetta, (pts[0][0] + mm(2, P.scala), pts[0][1]), 1.8, "DEGRADO", "MIDDLE_LEFT")
