@@ -31,9 +31,12 @@ class Faccia:
     ipotesi: bool = False
     fori: list[np.ndarray] = field(default_factory=list)
     fori_id: list[str] = field(default_factory=list)
+    n_imposta: np.ndarray | None = None  # normale imposta (es. infissi: quella della parete)
 
     @property
     def normale(self) -> np.ndarray:
+        if self.n_imposta is not None:
+            return self.n_imposta
         p = self.pts
         n = np.zeros(3)
         for a, b in zip(p, np.roll(p, -1, axis=0)):  # metodo di Newell
@@ -143,7 +146,8 @@ def _facce_parete(ed: Edificio, tipo: str, p0, p1, z_base: float) -> list[Faccia
                 rientro = -normale_out * min(RIENTRO_INFISSO, m.spessore.valore / 2)
                 inf = np.array(ring) + np.array([rientro[0], rientro[1], 0.0])
                 infissi.append(Faccia(inf, "infisso", materiale=ap.infisso or ap.tipo, rif_id=ap.id,
-                                      ipotesi=ap.altezza.ipotesi or ap.davanzale.ipotesi))
+                                      ipotesi=ap.altezza.ipotesi or ap.davanzale.ipotesi,
+                                      n_imposta=np.array([normale_out[0], normale_out[1], 0.0])))
     contorno = np.array([a3d(s, z) for s, z in pts2])
     f = Faccia(contorno, tipo, materiale=muri[0].materiale, rif_id=muri[0].id, ipotesi=ipot,
                fori=fori, fori_id=fori_id)
