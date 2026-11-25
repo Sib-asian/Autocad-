@@ -30,6 +30,10 @@ Disegni imprecisi: interpretali con buon senso da tecnico, non ricalcarli.
   formato AutoCAD 2000 (i programmi APE come Blumatica non aprono il DWG 2018), un solo layer bianco, linee
   normali, niente quote ne' scritte. Lezioni: `docs/lezioni/C001-...`, `C002-...`.
 - Catastale storto: raddrizzarlo prima di misurare (angolo dalla nitidezza delle proiezioni dei pixel).
+- Muri inclinati o locali non rettangolari: non vettorializzare i pixel (escono muri ondulati e moncherini).
+  Leggi a mano gli assi (rette) sulla scansione raddrizzata con griglia, sovrapponili alla scansione per
+  controllo, scrivili in `modello/assi.yaml` (metri) e lancia `rilievo assi <pratica>`: muri 30/10 dritti,
+  vani, ingresso con anta, balconi; segnala i lati sotto i 9 cm. Lezione `docs/lezioni/C003-...`.
 
 ## Passi
 

@@ -274,6 +274,23 @@ def cmd_banco(a) -> int:
     return 0
 
 
+def cmd_assi(a) -> int:
+    """Pianta per APE dagli assi dei muri (modello/assi.yaml): catastali con muri inclinati (lezione C003)."""
+    from .assi import carica, locali, pezzetti, pianta_ape_da_assi
+    base = Path(a.pratica)
+    d = carica(base / "modello" / "assi.yaml")
+    out = pianta_ape_da_assi(d, base / "output", base.resolve().name, versione=a.versione_dwg)
+    sup = sorted((round(p.area, 2) for p in locali(d)), reverse=True)
+    print(f"Locali (m2 calpestabili): {sup}  totale {sum(sup):.2f}  lorda {out['geometria']['fuori'].area:.2f}")
+    for k in ("dxf", "dwg"):
+        if k in out:
+            print(f"{k}: {out[k]}")
+    corti = pezzetti(out["dxf"])
+    for a_, b_ in corti:
+        print(f"ATTENZIONE pezzetto di muro sotto i 9 cm: {a_} -> {b_}")
+    return 1 if corti else 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="rilievo", description="Dal rilievo alle tavole tecniche")
     sp = p.add_subparsers(dest="cmd", required=True)
@@ -293,10 +310,14 @@ def main(argv=None) -> int:
                                     "documentazione, quadro (se manca: tutte quelle del tipo di pratica)")
     s.add_argument("--pdf", action="store_true", help="produce anche il PDF (di norma solo DWG)")
     s.add_argument("--ape", action="store_true",
-                   help="produce anche la pianta per i programmi APE: solo muri e porte, cm, AutoCAD 2000")
+                   help="produce anche la pianta per i programmi APE: solo muri e porte, metri, AutoCAD 2000")
     s.add_argument("--versione-dwg", default="ACAD2018",
                    help="formato del DWG: ACAD2000, ACAD2004, ACAD2007, ACAD2010, ACAD2013, ACAD2018")
     s.set_defaults(f=cmd_genera)
+    s = sp.add_parser("assi", help="pianta per APE dagli assi dei muri (modello/assi.yaml), in metri, AutoCAD 2000")
+    s.add_argument("pratica")
+    s.add_argument("--versione-dwg", default="ACAD2000")
+    s.set_defaults(f=cmd_assi)
     s = sp.add_parser("verifica", help="controlli automatici sul modello e sulle tavole")
     s.add_argument("pratica")
     s.set_defaults(f=cmd_verifica)

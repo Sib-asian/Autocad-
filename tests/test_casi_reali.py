@@ -114,3 +114,40 @@ def test_c002_niente_muri_dentro_i_locali():
     for m in ed.muri:
         asse = LineString(m.asse)
         assert asse.intersection(stanze.buffer(-0.02)).length < 0.01, m.id  # nessun asse passa in un locale
+
+
+# --- C003 (appartamento al primo piano da catastale con muri inclinati, 25/11/2026): la vettorializzazione
+# automatica dei pixel dava tramezzi ondulati, moncherini e scalini. Rimedio: assi dei muri letti a mano
+# (rette) in modello/assi.yaml e muri costruiti dagli assi (rilievo/assi.py).
+C003 = Path(__file__).parents[1] / "pratiche" / "C003" / "modello" / "assi.yaml"
+
+
+def test_c003_pianta_ape_da_assi_pulita(tmp_path):
+    import ezdxf
+    from rilievo.assi import carica, locali, pezzetti, pianta_ape_da_assi
+    d = carica(C003)
+    out = pianta_ape_da_assi(d, tmp_path, "C003")
+    doc = ezdxf.readfile(out["dxf"])
+    assert doc.dxfversion == "AC1015" and doc.header["$INSUNITS"] == 6  # AutoCAD 2000, metri
+    msp = doc.modelspace()
+    assert {e.dxf.layer for e in msp} == {"PIANTA"}
+    assert {e.dxftype() for e in msp} <= {"LWPOLYLINE", "LINE", "ARC"}  # niente scritte ne' quote
+    assert pezzetti(out["dxf"]) == []  # nessun moncherino o scalino sotto i 9 cm
+    sup = sorted(p.area for p in locali(d))
+    assert len(sup) == 8 and abs(sum(sup) - 83.5) < 0.5  # 8 locali, ~83,5 m2 calpestabili (in metri!)
+    x0, y0, x1, y1 = out["geometria"]["fuori"].bounds
+    assert 9 < x1 - x0 < 14 and 11 < y1 - y0 < 16
+
+
+def test_vano_vicino_a_un_tramezzo_arriva_alla_faccia():
+    from shapely.geometry import box
+    from rilievo.assi import geometria
+    d = {"spessori": {"esterni": 0.30, "interni": 0.10},
+         "contorno": [[0, 0], [6, 0], [6, 4], [0, 4]],
+         "tramezzi": [[[3, 0], [3, 4]], [[3, 2], [6, 2]]],
+         # porta sul tramezzo verticale che finisce a 4 cm dalla faccia del tramezzo orizzontale (y = 1,95)
+         "porte_interne": [{"centro": [3, 1.51], "larghezza": 0.80}]}
+    g = geometria(d)
+    assert not g["massa"].intersects(box(2.95, 1.12, 3.05, 1.94))
+    pezzo = g["massa"].intersection(box(2.9, 1.9, 3.1, 1.95))
+    assert pezzo.area < 1e-6  # il vano arriva alla faccia: nessun pezzetto da 4 cm
