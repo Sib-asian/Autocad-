@@ -90,11 +90,37 @@ def _figura(doc):
     return fig, ax
 
 
-def pianta_per_ape(ed, cartella: str | Path, nome: str, versione: str = "ACAD2000") -> dict:
+def _pulisci_vertici(pts, chiusa: bool, tol: float = 0.0005) -> list:  # 0,5 mm (in metri)
+    """Toglie i vertici a meno di `tol` dal precedente e quelli allineati con i vicini."""
+    out = []
+    for p in pts:
+        if not out or abs(p[0] - out[-1][0]) + abs(p[1] - out[-1][1]) > tol:
+            out.append(p)
+    if chiusa and len(out) > 2 and abs(out[0][0] - out[-1][0]) + abs(out[0][1] - out[-1][1]) <= tol:
+        out.pop()
+    cambiato = True
+    while cambiato and len(out) > 3:
+        cambiato = False
+        n = len(out)
+        for i in range(n if chiusa else n - 1):
+            if not chiusa and i == 0:
+                continue
+            a, b, c = out[i - 1], out[i], out[(i + 1) % n]
+            if abs((b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1])) <= tol * max(
+                    1.0, abs(c[0] - a[0]) + abs(c[1] - a[1])):
+                out.pop(i)
+                cambiato = True
+                break
+    return out
+
+
+def pianta_per_ape(ed, cartella: str | Path, nome: str, versione: str = "ACAD2000", testi: bool = False,
+                   layer: str = "PIANTA", unita: str = "m") -> dict:
     """Pianta da importare nei programmi per l'APE (Blumatica, Termolog, TerMus...): solo muri, porte e nomi
     con superfici dei locali, in centimetri, spigolo esterno in basso a sinistra nell'origine, formato vecchio
     (AutoCAD 2000) e DXF di riserva. Lezione della pratica C001: Blumatica Energy 6.2 non apre il DWG 2018
-    ("File non valido") e si confonde con tabelle, retini e quote."""
+    ("File non valido") e si confonde con tabelle, retini e quote. Pratica C002: l'utente vuole un solo layer
+    bianco con linee normali e nessuna scritta (`layer`, `testi`)."""
     from ezdxf.math import Matrix44
     from .dxf.stile import nuovo_documento
     from .genera.pianta import disegna_pianta
@@ -104,17 +130,24 @@ def pianta_per_ape(ed, cartella: str | Path, nome: str, versione: str = "ACAD200
     tmp = nuovo_documento(100)
     disegna_pianta(ed, tmp.modelspace(), 100, (0.0, 0.0), quote=False, titolo=None, linee_sezione=False)
     minx, miny, _, _ = ingombro_muri(ed).bounds
-    m = Matrix44.translate(-minx, -miny, 0) @ Matrix44.scale(100, 100, 1)  # metri -> centimetri
+    # in metri (1 unita' = 1 m, come si disegna a 1:100: la stanza da 4,98 si misura 4,98); cm solo se chiesto
+    fattore = 100.0 if unita == "cm" else 1.0
+    m = Matrix44.translate(-minx, -miny, 0) @ Matrix44.scale(fattore, fattore, 1)
     geo = {"MURI", "TRAMEZZI", "APERTURE", "APERTURE_NASCOSTE"}
     doc = ezdxf.new("R2000", setup=False)
-    doc.header["$INSUNITS"] = 5  # centimetri
+    doc.header["$INSUNITS"] = 5 if unita == "cm" else 6
     doc.header["$MEASUREMENT"] = 1
-    for ly in tmp.layers:
-        if ly.dxf.name in geo | {"TESTI"} and ly.dxf.name not in doc.layers:
-            doc.layers.add(ly.dxf.name, color=ly.dxf.color, lineweight=ly.dxf.lineweight)
+    if layer:
+        doc.layers.add(layer, color=7)  # bianco, spessore di linea normale (di default)
+    else:
+        for ly in tmp.layers:
+            if ly.dxf.name in geo | {"TESTI"} and ly.dxf.name not in doc.layers:
+                doc.layers.add(ly.dxf.name, color=ly.dxf.color, lineweight=ly.dxf.lineweight)
     msp = doc.modelspace()
     for e in tmp.modelspace():
         t, lay = e.dxftype(), e.dxf.layer
+        if t == "TEXT" and not testi:
+            continue
         if t == "TEXT" and lay == "TESTI":
             testo = e.dxf.text.strip()
             if testo == "N" or testo.startswith("q."):
@@ -125,15 +158,24 @@ def pianta_per_ape(ed, cartella: str | Path, nome: str, versione: str = "ACAD200
         c.transform(m)
         if t == "TEXT":
             c.dxf.style = "Standard"
+        if t == "LWPOLYLINE":  # niente vertici doppi o allineati (residui numerici sotto il millimetro)
+            pts = _pulisci_vertici([tuple(q[:2]) for q in c.get_points()], c.closed, tol=0.0005 * fattore)
+            c.set_points(pts, format="xy")
+        if layer:
+            c.dxf.layer = layer
+            for k in ("color", "lineweight", "linetype"):
+                c.dxf.discard(k)  # tutto DaLayer: bianco, linea normale
+            if t == "LWPOLYLINE":
+                c.dxf.discard("const_width")
         msp.add_entity(c)
-    dxf = cartella / f"{nome}_APE_cm_{versione}.dxf"
+    dxf = cartella / f"{nome}_APE_{unita}_{versione}.dxf"
     doc.saveas(dxf)
     out = {"dxf": dxf}
     if oda_disponibile():
         with tempfile.TemporaryDirectory() as t:
             src = Path(t) / dxf.name
             shutil.copy(dxf, src)
-            out["dwg"] = dxf_a_dwg(src, cartella / f"{nome}_APE_cm_{versione}.dwg", versione)
+            out["dwg"] = dxf_a_dwg(src, cartella / f"{nome}_APE_{unita}_{versione}.dwg", versione)
     return out
 
 

@@ -1,0 +1,232 @@
+pratica: {codice: C002, titolo: Appartamento al 4° piano - pianta per APE}
+nord_gradi: 240.0
+nord_ipotizzato: false
+muri:
+- id: M1
+  asse:
+  - [9.65, 4.210000000000001]
+  - [15.65, 4.210000000000001]
+  spessore: 0.3
+- id: M2
+  asse:
+  - [0.0, 0.0]
+  - [9.65, 0.0]
+  spessore: 0.3
+- id: M3
+  asse:
+  - [0.0, 9.180000000000001]
+  - [10.059999999999999, 9.180000000000001]
+  spessore: 0.3
+- id: M4
+  asse:
+  - [9.959999999999999, 10.25]
+  - [13.65, 10.25]
+  spessore: 0.3
+- id: M5
+  asse:
+  - [13.55, 6.35]
+  - [15.65, 6.35]
+  spessore: 0.3
+- id: M6
+  asse:
+  - [0.0, 4.3100000000000005]
+  - [9.65, 4.3100000000000005]
+  spessore: 0.1
+- id: M7
+  asse:
+  - [4.23, 5.28]
+  - [13.55, 5.28]
+  spessore: 0.1
+- id: M8
+  asse:
+  - [9.65, 0.0]
+  - [9.65, 4.3100000000000005]
+  spessore: 0.3
+- id: M9
+  asse:
+  - [0.0, 0.0]
+  - [0.0, 9.180000000000001]
+  spessore: 0.3
+- id: M10
+  asse:
+  - [9.959999999999999, 9.180000000000001]
+  - [9.959999999999999, 10.25]
+  spessore: 0.3
+- id: M11
+  asse:
+  - [13.65, 6.35]
+  - [13.65, 10.25]
+  spessore: 0.3
+- id: M12
+  asse:
+  - [15.65, 4.210000000000001]
+  - [15.65, 6.35]
+  spessore: 0.3
+- id: M13
+  asse:
+  - [5.180000000000001, 0.0]
+  - [5.180000000000001, 4.3100000000000005]
+  spessore: 0.1
+- id: M14
+  asse:
+  - [4.23, 5.229900000000001]
+  - [4.23, 9.180000000000001]
+  spessore: 0.1
+- id: M15
+  asse:
+  - [13.55, 5.229900000000001]
+  - [13.55, 6.35]
+  spessore: 0.1
+- id: M16
+  asse:
+  - [6.97, 5.28]
+  - [6.97, 9.180000000000001]
+  spessore: 0.1
+- id: M17
+  asse:
+  - [8.120000000000001, 5.28]
+  - [8.120000000000001, 9.180000000000001]
+  spessore: 0.1
+- id: M18
+  asse:
+  - [10.059999999999999, 5.28]
+  - [10.059999999999999, 9.180000000000001]
+  spessore: 0.1
+aperture:
+- id: F1
+  muro: M3
+  da: 1.31
+  a: 3.01
+  altezza: {valore: 1.4, fonte: ipotesi, nota: non riportata nel catastale}
+  davanzale: {valore: 1.0, fonte: ipotesi, nota: non riportato nel catastale}
+  lato: '-'
+- id: F2
+  muro: M3
+  da: 5.35
+  a: 6.52
+  altezza: {valore: 1.4, fonte: ipotesi, nota: non riportata nel catastale}
+  davanzale: {valore: 1.0, fonte: ipotesi, nota: non riportato nel catastale}
+  lato: '-'
+- id: F3
+  muro: M3
+  da: 7.09
+  a: 7.95
+  altezza: {valore: 1.4, fonte: ipotesi, nota: non riportata nel catastale}
+  davanzale: {valore: 1.0, fonte: ipotesi, nota: non riportato nel catastale}
+  lato: '-'
+- id: F4
+  muro: M3
+  da: 8.38
+  a: 9.25
+  altezza: {valore: 1.4, fonte: ipotesi, nota: non riportata nel catastale}
+  davanzale: {valore: 1.0, fonte: ipotesi, nota: non riportato nel catastale}
+  lato: '-'
+- id: F5
+  muro: M4
+  da: 1.15
+  a: 2.54
+  altezza: {valore: 1.4, fonte: ipotesi, nota: non riportata nel catastale}
+  davanzale: {valore: 1.0, fonte: ipotesi, nota: non riportato nel catastale}
+  lato: '-'
+- id: F6
+  muro: M2
+  da: 2.15
+  a: 3.71
+  altezza: {valore: 1.4, fonte: ipotesi, nota: non riportata nel catastale}
+  davanzale: {valore: 1.0, fonte: ipotesi, nota: non riportato nel catastale}
+- id: F7
+  muro: M2
+  da: 6.25
+  a: 7.71
+  altezza: {valore: 1.4, fonte: ipotesi, nota: non riportata nel catastale}
+  davanzale: {valore: 1.0, fonte: ipotesi, nota: non riportato nel catastale}
+- id: P1
+  muro: M5
+  da: 0.51
+  a: 1.63
+  altezza: {valore: 2.1, fonte: ipotesi, nota: non riportata nel catastale}
+  tipo: porta
+  lato: '-'
+- id: V1
+  muro: M7
+  da: 1.31
+  a: 2.4
+  altezza: {valore: 2.1, fonte: ipotesi, nota: non riportata nel catastale}
+  tipo: varco
+- id: V2
+  muro: M7
+  da: 2.91
+  a: 3.8
+  altezza: {valore: 2.1, fonte: ipotesi, nota: non riportata nel catastale}
+  tipo: varco
+- id: V3
+  muro: M7
+  da: 4.43
+  a: 5.45
+  altezza: {valore: 2.1, fonte: ipotesi, nota: non riportata nel catastale}
+  tipo: varco
+- id: V4
+  muro: M7
+  da: 8.01
+  a: 9.27
+  altezza: {valore: 2.1, fonte: ipotesi, nota: non riportata nel catastale}
+  tipo: varco
+- id: V5
+  muro: M6
+  da: 4.17
+  a: 5.13
+  altezza: {valore: 2.1, fonte: ipotesi, nota: non riportata nel catastale}
+  tipo: varco
+  lato: '-'
+- id: V6
+  muro: M6
+  da: 8.28
+  a: 9.04
+  altezza: {valore: 2.1, fonte: ipotesi, nota: non riportata nel catastale}
+  tipo: varco
+  lato: '-'
+locali:
+- id: L1
+  nome: Vano ovest
+  punto: [2.1650000000000005, 6.695]
+  h_min: 3.0
+- id: L2
+  nome: Disimpegno
+  punto: [8.89, 4.795]
+  h_min: 3.0
+- id: L3
+  nome: Ingresso
+  punto: [14.55, 5.28]
+  h_min: 3.0
+- id: L4
+  nome: Cucina
+  punto: [5.6, 7.180000000000001]
+  h_min: 3.0
+- id: L5
+  nome: Lavanderia
+  punto: [7.545, 7.180000000000001]
+  h_min: 3.0
+- id: L6
+  nome: WC
+  punto: [9.09, 7.180000000000001]
+  h_min: 3.0
+- id: L7
+  nome: Vano nord-est
+  punto: [11.805, 7.715]
+  h_min: 3.0
+- id: L8
+  nome: Camera sud-ovest
+  punto: [2.6400000000000006, 2.2050000000000005]
+  h_min: 3.0
+- id: L9
+  nome: Camera sud-est
+  punto: [7.365, 2.2050000000000005]
+  h_min: 3.0
+sezioni:
+- nome: A
+  p0: [2.6400000000000006, -1.35]
+  p1: [2.6400000000000006, 11.6]
+- nome: B
+  p0: [-1.35, 1.5885]
+  p1: [17.0, 1.5885]
+  verso: dx

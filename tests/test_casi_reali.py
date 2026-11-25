@@ -16,6 +16,7 @@ from rilievo.verifica import verifica
 
 R001 = Path(__file__).parents[1] / "pratiche" / "R001" / "modello" / "rilievo.yaml"
 C001 = Path(__file__).parents[1] / "pratiche" / "C001" / "modello" / "rilievo.yaml"
+C002 = Path(__file__).parents[1] / "pratiche" / "C002" / "modello" / "rilievo.yaml"
 
 
 @pytest.fixture(scope="module")
@@ -95,3 +96,21 @@ def test_c001_superfici_e_volume_per_ape(c001):
     assert float(dg.su) == 0.0  # bottega: anche WC e antibagno sono superficie non residenziale
     assert float(dg.snr) == pytest.approx(30.14, abs=0.01)
     assert float(dg.volume_vpp) == pytest.approx(float(dg.superficie_lorda) * 4.00, abs=0.05)  # h 4,00, non 3,00
+
+
+# --- C002 (appartamento da planimetria catastale, 25/11/2026): il disimpegno largo 87 cm fu scambiato per un
+# muro da 87 cm e due tramezzi si allungarono fino a metà corridoio, chiudendo lo spazio aperto.
+
+def test_c002_niente_muri_dentro_i_locali():
+    from shapely.geometry import LineString
+    from shapely.ops import unary_union
+    from rilievo.geometria import poligono_locale
+    ed = costruisci(yaml.safe_load(C002.read_text(encoding="utf-8")))
+    assert max(m.spessore.valore for m in ed.muri) <= 0.30 + 1e-6  # solo muri da 30 e tramezzi da 10
+    dati = yaml.safe_load(C002.read_text(encoding="utf-8"))
+    from shapely.geometry import box
+    stanze = unary_union([box(d["origine"][0], d["origine"][1], d["origine"][0] + d["larghezza"],
+                              d["origine"][1] + d["profondita"]) for d in dati["locali"]])
+    for m in ed.muri:
+        asse = LineString(m.asse)
+        assert asse.intersection(stanze.buffer(-0.02)).length < 0.01, m.id  # nessun asse passa in un locale

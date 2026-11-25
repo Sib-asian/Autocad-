@@ -10,7 +10,7 @@ from dataclasses import dataclass
 
 import ezdxf
 import numpy as np
-from shapely.geometry import Point, Polygon
+from shapely.geometry import LineString, Point, Polygon
 from shapely.geometry.polygon import orient
 from shapely.ops import unary_union
 
@@ -112,7 +112,25 @@ def _muri_da_massa(locali: dict[str, _Locale], dati: dict) -> list[Muro]:
     an = analizza_pianta(doc)
     mat_def = dati.get("materiale", "muratura")
     muri = []
-    for k, m in enumerate(an.muri):
+    zona = massa.buffer(1e-4)  # solo tolleranza numerica: un muro non sporge nello spazio libero
+    validi = []
+    for m in an.muri:
+        # un muro vero sta nella massa muraria: un corridoio stretto fra due tramezzi non e' un muro, e un muro
+        # non si allunga nello spazio aperto fra locali a contatto (lezione della pratica C002)
+        asse = LineString([tuple(m.p0), tuple(m.p1)])
+        dentro = asse.intersection(zona)
+        pezzi = [g for g in getattr(dentro, "geoms", [dentro]) if isinstance(g, LineString) and not g.is_empty]
+        if not pezzi:
+            continue
+        pezzo = max(pezzi, key=lambda g: g.length)
+        if pezzo.length < max(0.25, m.spessore) or pezzo.length < 0.5 * asse.length - 1.0:
+            continue
+        a, b = (np.array(c, float) for c in (pezzo.coords[0], pezzo.coords[-1]))
+        if float(np.dot(b - a, m.p1 - m.p0)) < 0:
+            a, b = b, a
+        m.p0, m.p1 = a, b
+        validi.append(m)
+    for k, m in enumerate(validi):
         mid = Point(*(m.p0 + m.p1) / 2)
         # materiale del locale vicino con lo stesso spessore esterno (altrimenti quello generale)
         vicini = sorted(locali.values(), key=lambda l: l.pol.distance(mid))
@@ -165,7 +183,12 @@ def _aperture(dati: dict, locali: dict[str, _Locale], muri: list[Muro]) -> list[
         a, b = _lato(loc, spec["lato"])
         o, u = _punto_zero(a, b, spec["lato"], spec.get("dal"))
         v_da, v_a = V.model_validate(spec["da"]), V.model_validate(spec["a"])  # anche ipotizzate (es. porte)
-        pa, pb = o + u * v_da.valore, o + u * v_a.valore
+        L_lato = float(np.linalg.norm(np.subtract(b, a)))
+        # a meno di 3 cm dallo spigolo l'apertura arriva allo spigolo: un pezzetto di muro di 1 cm e' rumore
+        # della misura, non un muro (pratica C002)
+        sa = 0.0 if 0.0 <= v_da.valore < 0.03 else v_da.valore
+        sb = L_lato if 0.0 <= L_lato - v_a.valore < 0.03 else v_a.valore
+        pa, pb = o + u * sa, o + u * sb
         mid = (pa + pb) / 2
         best = None
         for m in muri:

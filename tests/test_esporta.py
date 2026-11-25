@@ -61,11 +61,15 @@ def test_pianta_per_software_ape(tmp_path):
     ed = genera_caso(3)
     out = pianta_per_ape(ed, tmp_path, "prova")
     doc = ezdxf.readfile(out["dxf"])
-    assert doc.dxfversion == "AC1015" and doc.header["$INSUNITS"] == 5
+    assert doc.dxfversion == "AC1015" and doc.header["$INSUNITS"] == 6  # metri (pratica C002: 1:100 = metri)
     tipi = collections.Counter(e.dxftype() for e in doc.modelspace())
     assert not ({"HATCH", "DIMENSION", "MTEXT", "INSERT"} & set(tipi))
-    assert {e.dxf.layer for e in doc.modelspace()} <= {"MURI", "TRAMEZZI", "APERTURE", "APERTURE_NASCOSTE", "TESTI"}
-    bb = ezdxf.bbox.extents(doc.modelspace().query('*[layer=="MURI"]'))
-    assert abs(bb.extmin.x) < 1e-6 and abs(bb.extmin.y) < 1e-6 and bb.extmax.x > 100  # centimetri
+    # pratica C002: un solo layer bianco, linee normali, nessuna scritta
+    assert {e.dxf.layer for e in doc.modelspace()} == {"PIANTA"} and "TEXT" not in tipi
+    ly = doc.layers.get("PIANTA")
+    assert ly.dxf.color == 7 and ly.dxf.lineweight < 0  # spessore di default
+    assert all(not e.dxf.hasattr("lineweight") and not e.dxf.hasattr("color") for e in doc.modelspace())
+    bb = ezdxf.bbox.extents(doc.modelspace().query("LWPOLYLINE"))  # i muri
+    assert abs(bb.extmin.x) < 1e-6 and abs(bb.extmin.y) < 1e-6 and 2 < bb.extmax.x < 60  # metri
     if "dwg" in out:
         assert open(out["dwg"], "rb").read(6) == b"AC1015"

@@ -128,3 +128,13 @@ def test_contorno_senza_dentelli_negli_angoli():
     pulito = _togli_dentelli(anello)
     assert len(pulito) == 7
     assert (6.03, 4.31) in pulito and (-0.35, 4.31) in pulito  # il risalto vero del Vano 3 resta
+
+
+def test_apertura_a_un_centimetro_dallo_spigolo_arriva_allo_spigolo():
+    """Un varco che finisce a 1 cm dall'angolo lascerebbe una colonnina di muro di 1 cm (pratica C002)."""
+    d = _dati()
+    d["aperture"] = [{"locale": "A", "lato": "sud", "dal": "ovest", "da": 2.0, "a": 3.99, "altezza": 2.1,
+                      "tipo": "varco"}]
+    ed = costruisci(d)
+    ap = ed.aperture[0]
+    assert ap.larghezza == pytest.approx(2.0, abs=1e-3)
