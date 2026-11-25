@@ -37,6 +37,13 @@ LAYER = {
 FONT = "arial.ttf"
 
 
+def larghezza_testo(t: str, h_mm: float) -> float:
+    """Larghezza vera del testo sulla carta (mm) con il font dello stile: la stessa misura usata dal controllo
+    delle sovrapposizioni e da AutoCAD."""
+    from ezdxf.fonts import fonts
+    return fonts.make_font(FONT, cap_height=h_mm).text_width(t)
+
+
 def mm(valore_mm: float, scala: int) -> float:
     """Converte una misura sulla carta (mm) in metri di disegno alla scala data."""
     return valore_mm * scala / 1000.0

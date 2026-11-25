@@ -24,6 +24,10 @@ Disegni imprecisi: interpretali con buon senso da tecnico, non ricalcarli.
 - Le linee storte per l'imprecisione del disegno vanno **raddrizzate**: muri ortogonali e allineati, salvo
   che la storpiatura sia reale (lo dicono le misure o le foto).
 - Ogni scelta interpretativa va nelle domande o tra le ipotesi; i casi dubbi si discutono con l'utente.
+- PDF catastale: e' una scansione. La scala si prende dalla barra vettoriale "10 metri" del PDF; si misura con i
+  profili dei pixel; muri dello spessore indicato dall'utente centrati sugli assi del catastale.
+- Per un APE consegna anche `rilievo genera <pratica> --tavole pianta --ape`: pianta solo geometria, in cm, in
+  formato AutoCAD 2000 (i programmi APE come Blumatica non aprono il DWG 2018). Lezione: `docs/lezioni/C001-...`.
 
 ## Passi
 

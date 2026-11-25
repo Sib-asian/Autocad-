@@ -127,6 +127,28 @@ def testi_sovrapposti(doc) -> list[str]:
     return out
 
 
+def testi_sui_muri(doc) -> list[str]:
+    """Scritte che cadono sopra un muro tagliato in pianta: non si leggono (errore della pianta C001)."""
+    from shapely.geometry import Polygon
+    from shapely.ops import unary_union
+    muri = []
+    for e in doc.modelspace().query('LWPOLYLINE[layer=="MURI" | layer=="TRAMEZZI"]'):
+        pts = [(x, y) for x, y, *_ in e.get_points()]
+        if e.closed and len(pts) >= 3:
+            muri.append(Polygon(pts).buffer(0))
+    if not muri:
+        return []
+    massa = unary_union(muri)
+    out = []
+    for b, t, layer in _box_testi(doc):
+        if layer.startswith("QUOTE") or layer in ("CARTIGLIO", "CORNICE"):
+            continue
+        dentro = b.buffer(-0.15 * min(b.bounds[2] - b.bounds[0], b.bounds[3] - b.bounds[1]))
+        if dentro.intersects(massa) and dentro.intersection(massa).area > 0.2 * dentro.area:
+            out.append(f"'{t}' scritto sopra un muro vicino a ({b.centroid.x:.2f}, {b.centroid.y:.2f})")
+    return out
+
+
 def controlla_aperture(ed: Edificio) -> Controllo:
     from .genera.prospetti import lati_prospetto
     from .modello3d import facce
@@ -265,6 +287,9 @@ def verifica(ed: Edificio, tavole, dwg=None) -> Report:
     sov = testi_sovrapposti(tavole.doc)
     rep.righe.append(Controllo("Testi sovrapposti", "una scritta coperta da un'altra non si legge in stampa",
                                "0", str(len(sov)), "ATTENZIONE" if sov else "OK", sov))
+    sui = testi_sui_muri(tavole.doc)
+    rep.righe.append(Controllo("Scritte sui muri", "una scritta sopra un muro tagliato non si legge",
+                               "0", str(len(sui)), "ATTENZIONE" if sui else "OK", sui))
     rep.righe.append(controlla_ipotesi(ed, tavole))
     if dwg is not None:
         from .esporta import roundtrip_ok

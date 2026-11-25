@@ -94,7 +94,10 @@ def cmd_genera(a) -> int:
     except ValueError as e:
         print("Impossibile comporre le tavole:", e)
         return 2
-    out = esporta(t, base / "output", base.resolve().name, dwg=not a.no_dwg, pdf=a.pdf)
+    out = esporta(t, base / "output", base.resolve().name, dwg=not a.no_dwg, pdf=a.pdf, versione=a.versione_dwg)
+    if a.ape:  # pianta semplificata per i programmi dell'APE (Blumatica, Termolog, TerMus...)
+        from .esporta import pianta_per_ape
+        out.update({f"ape_{k}": v for k, v in pianta_per_ape(ed, base / "output", base.resolve().name).items()})
     if ed.foto:
         from .genera.perizia import documentazione_fotografica_pdf
         out["foto"] = documentazione_fotografica_pdf(ed, base / "output" / "documentazione_fotografica.pdf",
@@ -289,6 +292,10 @@ def main(argv=None) -> int:
     s.add_argument("--tavole", help="solo queste, separate da virgola: pianta, prospetti, sezioni, comparativa, "
                                     "documentazione, quadro (se manca: tutte quelle del tipo di pratica)")
     s.add_argument("--pdf", action="store_true", help="produce anche il PDF (di norma solo DWG)")
+    s.add_argument("--ape", action="store_true",
+                   help="produce anche la pianta per i programmi APE: solo muri e porte, cm, AutoCAD 2000")
+    s.add_argument("--versione-dwg", default="ACAD2018",
+                   help="formato del DWG: ACAD2000, ACAD2004, ACAD2007, ACAD2010, ACAD2013, ACAD2018")
     s.set_defaults(f=cmd_genera)
     s = sp.add_parser("verifica", help="controlli automatici sul modello e sulle tavole")
     s.add_argument("pratica")

@@ -1,0 +1,81 @@
+pratica: {codice: C001, titolo: Bottega al piano terra - pianta per APE}
+nord_gradi: 137.0
+nord_ipotizzato: false
+muri:
+- id: M1
+  asse:
+  - [-0.15, 7.199999999999999]
+  - [4.5, 7.199999999999999]
+  spessore: 0.3
+- id: M2
+  asse:
+  - [-0.15, -0.15]
+  - [4.5, -0.15]
+  spessore: 0.3
+- id: M3
+  asse:
+  - [3.01, 4.4]
+  - [4.5, 4.4]
+  spessore: 0.1
+- id: M4
+  asse:
+  - [3.01, 5.63]
+  - [4.5, 5.63]
+  spessore: 0.1
+- id: M5
+  asse:
+  - [4.5, -0.15]
+  - [4.5, 7.199999999999999]
+  spessore: 0.3
+- id: M6
+  asse:
+  - [-0.15, -0.15]
+  - [-0.15, 7.199999999999999]
+  spessore: 0.3
+- id: M7
+  asse:
+  - [3.01, 4.4]
+  - [3.01, 7.199999999999999]
+  spessore: 0.1
+aperture:
+- id: P1
+  muro: M6
+  da: 0.86
+  a: 3.17
+  altezza: {valore: 2.7, fonte: ipotesi, nota: 'altezza non riportata nel catastale: da misurare'}
+  tipo: porta
+  battente: doppio
+  lato: '-'
+- id: P2
+  muro: M3
+  da: {valore: 0.21, fonte: ipotesi, nota: 'non riportata nel catastale: porta centrata sulla crocetta'}
+  a: {valore: 0.91, fonte: ipotesi, nota: 'non riportata nel catastale: porta centrata sulla crocetta'}
+  altezza: {valore: 2.1, fonte: ipotesi, nota: altezza non riportata nel catastale}
+  tipo: porta
+- id: P3
+  muro: M4
+  da: {valore: 0.21, fonte: ipotesi, nota: 'non riportata nel catastale: porta centrata sulla crocetta'}
+  a: {valore: 0.91, fonte: ipotesi, nota: 'non riportata nel catastale: porta centrata sulla crocetta'}
+  altezza: {valore: 2.1, fonte: ipotesi, nota: altezza non riportata nel catastale}
+  tipo: porta
+locali:
+- id: L1
+  nome: Bottega
+  punto: [2.175, 2.175]
+  h_min: 4.0
+- id: L2
+  nome: Antibagno
+  punto: [3.705, 5.015000000000001]
+  h_min: 4.0
+- id: L3
+  nome: WC
+  punto: [3.705, 6.365]
+  h_min: 4.0
+sezioni:
+- nome: A
+  p0: [1.968626483865574, -1.5]
+  p1: [1.968626483865574, 8.55]
+- nome: B
+  p0: [-1.5, 2.4675]
+  p1: [5.85, 2.4675]
+  verso: dx

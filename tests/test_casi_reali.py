@@ -15,6 +15,7 @@ from rilievo.genera.tavola import componi_tavole
 from rilievo.verifica import verifica
 
 R001 = Path(__file__).parents[1] / "pratiche" / "R001" / "modello" / "rilievo.yaml"
+C001 = Path(__file__).parents[1] / "pratiche" / "C001" / "modello" / "rilievo.yaml"
 
 
 @pytest.fixture(scope="module")
@@ -46,3 +47,51 @@ def test_r001_totali_dei_prospetti_uguali_alla_pianta(r001):
     # 0,35 + 6,35 + 0,35 + 3,85 + 0,45 = 11,35 (sud, nord, sezione A); 0,49 + 3,71 + 0,60 + 3,16 + 0,15 = 8,11
     assert testi.count("11,35") >= 2 and testi.count("8,11") >= 2
     assert "11,36" not in testi and "8,12" not in testi
+
+
+# --- C001 (bottega da planimetria catastale, 25/11/2026): pianta per APE a 1:100. Al primo giro: 15 scritte
+# sovrapposte nei locali piccoli, linee di sezione non richieste, quote totali doppie, ingresso tutto rosso
+# anche se la larghezza era misurata, volume calcolato con 3,00 invece di 4,00, WC contato come residenziale.
+
+@pytest.fixture(scope="module")
+def c001():
+    ed = costruisci(yaml.safe_load(C001.read_text(encoding="utf-8")))
+    return ed, componi_tavole(ed, scala=100, tavole={"pianta"})
+
+
+def test_c001_pianta_senza_scritte_sovrapposte(c001):
+    from rilievo.verifica import testi_sovrapposti
+    _, t = c001
+    assert testi_sovrapposti(t.doc) == []
+
+
+def test_c001_niente_linee_di_sezione_se_non_richieste(c001):
+    _, t = c001
+    assert len(t.doc.modelspace().query('*[layer=="LINEE_SEZIONE"]')) == 0
+
+
+def test_c001_totali_esterni_una_volta_per_lato(c001):
+    _, t = c001
+    testi = [d.dxf.text for d in t.doc.modelspace().query("DIMENSION")]
+    assert testi.count("4,95") == 2 and testi.count("7,65") == 2  # un totale per lato, non due
+
+
+def test_c001_ingresso_misurato_disegnato_a_due_ante_e_non_rosso(c001):
+    ed, t = c001
+    msp = t.doc.modelspace()
+    p1 = next(a for a in ed.aperture if a.id == "P1")
+    assert p1.battente == "doppio" and abs(p1.larghezza - 2.31) < 0.005
+    archi = [e for e in msp.query("ARC") if abs(e.dxf.radius * 1 - 2.31 / 2) < 0.01]
+    assert len(archi) == 2
+    rossi = [e for e in msp.query('LWPOLYLINE[layer=="IPOTESI_DA_VERIFICARE"]')
+             if e.closed and abs(max(p[1] for p in e.get_points()) - min(p[1] for p in e.get_points()) - 2.31) < 0.02]
+    assert not rossi  # rossa solo la sigla (altezza ipotizzata), non il vano misurato
+
+
+def test_c001_superfici_e_volume_per_ape(c001):
+    from rilievo.genera.tabelle import dati_generali
+    ed, _ = c001
+    dg = dati_generali(ed)
+    assert float(dg.su) == 0.0  # bottega: anche WC e antibagno sono superficie non residenziale
+    assert float(dg.snr) == pytest.approx(30.14, abs=0.01)
+    assert float(dg.volume_vpp) == pytest.approx(float(dg.superficie_lorda) * 4.00, abs=0.05)  # h 4,00, non 3,00

@@ -1,0 +1,28 @@
+# Bottega al piano terra - pianta per APE. Fonte: planimetria catastale del 1982, scala 1:200, scansione a
+# 200 dpi (1 pixel = 2,54 cm, scala verificata sulla barra "10 metri" del PDF). Misure a +/- 3 cm.
+# Regole dell'utente: muri perimetrali 30 cm, tramezzi 10 cm, porta d'ingresso disegnata come porta vera.
+# I muri da 30 sono centrati sugli assi dei muri del catastale (li' disegnati da circa 23 cm).
+# Origine: spigolo interno sud-ovest della bottega; x verso destra del foglio, y verso l'alto.
+pratica: {codice: C001, tipo: rilievo, titolo: "Bottega al piano terra - pianta per APE"}
+nord_gradi: 137   # dal simbolo ORIENTAMENTO del catastale: nord verso l'alto a sinistra
+nord_ipotizzato: false
+spessori: {esterni: 0.30, interni: 0.10}
+locali:
+  # la bottega gira intorno al blocco WC (angolo nord-est): poligono a L
+  - {nome: Bottega, origine: [0, 0], h: 4.00,
+     poligono: [[0, 0], [4.35, 0], [4.35, 4.35], [2.96, 4.35], [2.96, 7.05], [0, 7.05]]}
+  - {nome: Antibagno, origine: [3.06, 4.45], larghezza: 1.29, profondita: 1.13, h: 4.00}
+  - {nome: WC, origine: [3.06, 5.68], larghezza: 1.29, profondita: 1.37, h: 4.00}
+aperture:
+  # ingresso: vano di 2,31 m sul lato ovest (nel catastale disegnato come rettangolo); porta a due ante
+  - {locale: Bottega, lato: ovest, dal: sud, da: 0.71, a: 3.02, tipo: porta, battente: doppio,
+     altezza: {valore: 2.70, fonte: ipotesi, nota: "altezza non riportata nel catastale: da misurare"}}
+  # porte del blocco WC: posizione dalle crocette del catastale, larghezza e altezza non riportate
+  - {locale: Antibagno, lato: sud, dal: ovest, tipo: porta,
+     da: {valore: 0.16, fonte: ipotesi, nota: "non riportata nel catastale: porta centrata sulla crocetta"},
+     a: {valore: 0.86, fonte: ipotesi, nota: "non riportata nel catastale: porta centrata sulla crocetta"},
+     altezza: {valore: 2.10, fonte: ipotesi, nota: "altezza non riportata nel catastale"}}
+  - {locale: WC, lato: sud, dal: ovest, tipo: porta,
+     da: {valore: 0.16, fonte: ipotesi, nota: "non riportata nel catastale: porta centrata sulla crocetta"},
+     a: {valore: 0.86, fonte: ipotesi, nota: "non riportata nel catastale: porta centrata sulla crocetta"},
+     altezza: {valore: 2.10, fonte: ipotesi, nota: "altezza non riportata nel catastale"}}

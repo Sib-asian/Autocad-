@@ -99,8 +99,9 @@ def _impagina(viste: list[tuple[Vista, Ingombro]], scala: int):
 PROFILI_PROGETTO = ("cila", "scia", "permesso", "progetto")
 
 
-def _viste_pianta(ed: Edificio, scala: int, titolo: str = "PIANTA", tabelle: bool = True) -> list[Vista]:
-    v: list[Vista] = [lambda m, o: disegna_pianta(ed, m, scala, o, titolo=titolo)]
+def _viste_pianta(ed: Edificio, scala: int, titolo: str = "PIANTA", tabelle: bool = True,
+                  linee_sezione: bool = True) -> list[Vista]:
+    v: list[Vista] = [lambda m, o: disegna_pianta(ed, m, scala, o, titolo=titolo, linee_sezione=linee_sezione)]
     if tabelle and ed.locali:
         v.append(lambda m, o: _tabella(ed, m, o, scala))
     v.append(lambda m, o: _legenda(ed, m, o, scala))
@@ -168,7 +169,8 @@ def componi_tavole(ed: Edificio, profilo: str | None = None, scala: int | None =
         gruppi += _gruppi_stato(prog, scala, "Stato di progetto")
         gruppi.append(comparativa(fatto, prog))
     else:
-        gruppi.append(("Pianta", _viste_pianta(ed, scala)))
+        con_sezioni = not tavole or any("sezion" in k for k in tavole)  # tracce in pianta solo se servono
+        gruppi.append(("Pianta", _viste_pianta(ed, scala, linee_sezione=con_sezioni)))
         if p := _viste_prospetti(ed, scala):
             gruppi.append(("Prospetti", p))
         if s := _viste_sezioni(ed, scala):
@@ -277,7 +279,8 @@ def _tabella(ed: Edificio, msp, o, scala) -> Ingombro:
     dg = dati_generali(ed)
     gen = [["Dato", "Valore"], ["Superficie lorda (v.p.p.)", f"{fmt(dg.superficie_lorda)} m²"],
            ["Superficie coperta", f"{fmt(dg.superficie_coperta)} m²"],
-           ["Volume vuoto per pieno (fino all'estradosso)", f"{fmt(dg.volume_vpp)} m³"],
+           ["Volume vuoto per pieno (fino all'estradosso)" if ed.falde else
+            "Volume vuoto per pieno (S lorda x h interna, solai esclusi)", f"{fmt(dg.volume_vpp)} m³"],
            ["Superficie utile residenziale (SU)", f"{fmt(dg.su)} m²"],
            ["Superficie non residenziale (SNR)", f"{fmt(dg.snr)} m²"]]
     alt_gen = 6 * len(gen)
@@ -315,9 +318,16 @@ def _legenda(ed: Edificio, msp, o, scala) -> Ingombro:
 def righe_note(ed: Edificio) -> list[str]:
     """Ipotesi raggruppate per oggetto e motivo (una riga per falda, non una per vertice)."""
     gruppi: dict[tuple, list[float]] = {}
+    larghezze = {a.id: a.larghezza for a in ed.aperture}
     for ogg, campo, val in ed.ipotesi():
-        chiave = (ogg, campo.split("[")[0], val.nota)
-        gruppi.setdefault(chiave, []).append(val.valore)
+        campo = campo.split("[")[0]
+        valore = val.valore
+        if campo in ("da", "a") and ogg in larghezze:  # estremi di un'apertura: si legge la larghezza
+            campo, valore = "larghezza", larghezze[ogg]
+        chiave = (ogg, campo, val.nota)
+        if chiave in gruppi and campo == "larghezza":
+            continue
+        gruppi.setdefault(chiave, []).append(valore)
     righe = ["Orientamento del Nord ipotizzato."] if ed.nord_ipotizzato else []
     for (ogg, campo, nota), valori in gruppi.items():
         lo, hi = min(valori), max(valori)

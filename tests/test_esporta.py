@@ -49,3 +49,23 @@ def test_dwg_ac1032_roundtrip(ed_completo, tmp_path):
     with open(out["dwg"], "rb") as fh:
         assert fh.read(6) == b"AC1032"
     assert roundtrip_ok(out["dwg"], t.doc)
+
+
+def test_pianta_per_software_ape(tmp_path):
+    """Per i programmi APE (es. Blumatica, che non apre il DWG 2018): solo muri, porte e locali, in centimetri,
+    nell'origine, formato AutoCAD 2000 (pratica C001)."""
+    import collections
+    import ezdxf
+    from rilievo.banco.caso import genera_caso
+    from rilievo.esporta import pianta_per_ape
+    ed = genera_caso(3)
+    out = pianta_per_ape(ed, tmp_path, "prova")
+    doc = ezdxf.readfile(out["dxf"])
+    assert doc.dxfversion == "AC1015" and doc.header["$INSUNITS"] == 5
+    tipi = collections.Counter(e.dxftype() for e in doc.modelspace())
+    assert not ({"HATCH", "DIMENSION", "MTEXT", "INSERT"} & set(tipi))
+    assert {e.dxf.layer for e in doc.modelspace()} <= {"MURI", "TRAMEZZI", "APERTURE", "APERTURE_NASCOSTE", "TESTI"}
+    bb = ezdxf.bbox.extents(doc.modelspace().query('*[layer=="MURI"]'))
+    assert abs(bb.extmin.x) < 1e-6 and abs(bb.extmin.y) < 1e-6 and bb.extmax.x > 100  # centimetri
+    if "dwg" in out:
+        assert open(out["dwg"], "rb").read(6) == b"AC1015"

@@ -6,6 +6,7 @@ Prima di iniziare una pratica si leggono tutte le lezioni del tipo di lavoro ric
 | Pratica | Lavoro | Lezione |
 |---|---|---|
 | R001 | prospetti e sezioni da pianta DWG + altezze | [R001-errori-da-non-ripetere.md](R001-errori-da-non-ripetere.md) |
+| C001 | pianta da planimetria catastale (PDF) per APE | [C001-pianta-catastale-per-ape.md](C001-pianta-catastale-per-ape.md) |
 
 ## Alla fine di ogni pratica (obbligatorio, anche se è andata bene)
 

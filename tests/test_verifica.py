@@ -93,3 +93,16 @@ def test_prospetti_puliti_scopre_linee_storte():
     assert controlla_linee_prospetti(doc) == []
     msp.add_lwpolyline([(5.0, 3.15), (4.95, 4.16)], dxfattribs={"layer": "PROSPETTI_SPIGOLI"})  # storta
     assert len(controlla_linee_prospetti(doc)) == 1
+
+
+def test_scritte_sui_muri_scoperte():
+    """Una sigla scritta sopra un muro non si legge (errore visto sulla pianta C001)."""
+    from rilievo.dxf.stile import nuovo_documento, testo
+    from rilievo.verifica import testi_sui_muri
+    doc = nuovo_documento(100)
+    msp = doc.modelspace()
+    msp.add_lwpolyline([(0, 0), (5, 0), (5, 0.3), (0, 0.3)], close=True, dxfattribs={"layer": "MURI"})
+    testo(msp, "P3", (2.5, 1.0), 1.8, 100, "TESTI", "MIDDLE_CENTER")
+    assert testi_sui_muri(doc) == []
+    testo(msp, "P4 70x210", (2.5, 0.15), 1.8, 100, "TESTI", "MIDDLE_CENTER")
+    assert len(testi_sui_muri(doc)) == 1

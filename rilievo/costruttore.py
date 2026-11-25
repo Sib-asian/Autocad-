@@ -164,7 +164,8 @@ def _aperture(dati: dict, locali: dict[str, _Locale], muri: list[Muro]) -> list[
         loc = locali[nome]
         a, b = _lato(loc, spec["lato"])
         o, u = _punto_zero(a, b, spec["lato"], spec.get("dal"))
-        pa, pb = o + u * float(spec["da"]), o + u * float(spec["a"])
+        v_da, v_a = V.model_validate(spec["da"]), V.model_validate(spec["a"])  # anche ipotizzate (es. porte)
+        pa, pb = o + u * v_da.valore, o + u * v_a.valore
         mid = (pa + pb) / 2
         best = None
         for m in muri:
@@ -190,8 +191,9 @@ def _aperture(dati: dict, locali: dict[str, _Locale], muri: list[Muro]) -> list[
         lato_porta = "+" if float((np.array(loc.pol.centroid.coords[0]) - p0) @ nrm) > 0 else "-"
         w = s1 - s0
         out.append(Apertura(
-            id=spec.get("id", f"{pref}{contatori[pref]}"), muro=m.id, da=V(valore=round(s0, 3)),
-            a=V(valore=round(s1, 3)), altezza=V.model_validate(spec["altezza"]),
+            id=spec.get("id", f"{pref}{contatori[pref]}"), muro=m.id,
+            da=v_da.model_copy(update={"valore": round(s0, 3)}), a=v_a.model_copy(update={"valore": round(s1, 3)}),
+            altezza=V.model_validate(spec["altezza"]),
             davanzale=V.model_validate(spec.get("davanzale", 0.0)), tipo=tipo,
             forma=spec.get("forma", "rettangolare"), lato=lato_porta,
             battente=spec.get("battente", "doppio" if tipo == "porta" and w > 1.05 else "sx"),

@@ -11,7 +11,7 @@ from shapely.geometry.polygon import orient
 from shapely.ops import polylabel, unary_union
 
 from ..dxf.quote import catena, fmt, fmt_quota, quota_allineata
-from ..dxf.stile import aggiungi_dimstyle, mm, testo
+from ..dxf.stile import aggiungi_dimstyle, larghezza_testo, mm, testo
 from ..geometria import (apertura_mondo, direzione, normale_sx, perimetro_esterno, poligono_locale,
                          poligono_muro, poligoni_muri)
 from ..modello import Edificio
@@ -101,11 +101,14 @@ class _Penna:
 
 
 def disegna_pianta(ed: Edificio, msp, scala: int = 50, origine=(0.0, 0.0), quote: bool = True,
-                   titolo: str | None = "PIANTA", schema: bool = False) -> Ingombro:
+                   titolo: str | None = "PIANTA", schema: bool = False, linee_sezione: bool = True) -> Ingombro:
     """schema=True: pianta essenziale (muri, aperture, nomi dei locali, linee di sezione) per lo schema di
     riferimento delle sezioni."""
     P = _Penna(msp, origine, scala)
     P.schema = schema
+    P.sigle = []
+    P.ante = []
+    P.ante_mondo = []
     ds = aggiungi_dimstyle(msp.doc, scala)
     tagliati = poligoni_muri(ed, con_aperture=True)
 
@@ -145,9 +148,15 @@ def disegna_pianta(ed: Edificio, msp, scala: int = 50, origine=(0.0, 0.0), quote
                 P.poly(pol.exterior.coords, "COPERTURA_PIANTA", chiusa=True)
 
     # --- locali: nome, superficie, altezze, quota pavimento
+    ante = unary_union(getattr(P, "ante_mondo", [])) if getattr(P, "ante_mondo", None) else None
     for loc in ed.locali:
         pol = poligono_locale(ed, loc)
-        c = polylabel(pol, tolerance=0.02)
+        libero = pol
+        if ante is not None and not schema:  # l'etichetta sta fuori dalle zone spazzate dalle ante
+            resto = pol.difference(ante.buffer(mm(0.5, scala)))
+            if not resto.is_empty:
+                libero = max(getattr(resto, "geoms", [resto]), key=lambda g: g.area)
+        c = polylabel(libero, tolerance=0.02)
         h = loc.h_min.valore
         if loc.h_max is not None and abs(loc.h_max.valore - h) > 0.005:
             htxt = f"h min {fmt(h)} - h max {fmt(loc.h_max.valore)}"
@@ -155,21 +164,43 @@ def disegna_pianta(ed: Edificio, msp, scala: int = 50, origine=(0.0, 0.0), quote
             htxt = f"h = {fmt(h)}"
         ipot = loc.h_min.ipotesi or (loc.h_max is not None and loc.h_max.ipotesi)
         lay = "IPOTESI_DA_VERIFICARE" if ipot else "TESTI"
-        dz = mm(4.2, scala)
         if schema:
             P.testo(loc.nome.upper(), (c.x, c.y), 2.2)
             continue
-        P.testo(loc.nome.upper(), (c.x, c.y + dz), 3.0)
-        P.testo(f"S = {fmt(pol.area)} m²", (c.x, c.y), 2.2)
-        P.testo(htxt + (" (*)" if ipot else ""), (c.x, c.y - dz), 2.0, lay)
-        P.testo(f"q. {fmt_quota(loc.quota_pavimento.valore)}", (c.x, c.y - 2 * dz), 1.8)
+        nome = (loc.nome.upper(), "TESTI")
+        sup = (f"S = {fmt(pol.area)} m²", "TESTI")
+        alt = (htxt + (" (*)" if ipot else ""), lay)
+        quota = (f"q. {fmt_quota(loc.quota_pavimento.valore)}", "TESTI")
+        # la versione piu' completa che entra nel locale (nei locali piccoli si toglie il superfluo)
+        breve = (_abbrevia(loc.nome), "TESTI")
+        solo_s = (f"{fmt(pol.area)} m²", "TESTI")
+        varianti = [([nome, sup, alt, quota], [3.0, 2.2, 2.0, 1.8], 4.2),
+                    ([nome, sup, alt], [2.2, 1.8, 1.8], 3.0),
+                    ([nome, sup], [1.8, 1.6], 2.5),
+                    ([breve, solo_s], [1.8, 1.6], 2.5),
+                    ([breve, solo_s], [1.6, 1.5], 2.2)]
+        for area, centro in ((libero, c), (pol, polylabel(pol, tolerance=0.02))):
+            for righe, alte, passo in varianti:
+                if _etichetta_entra(area, centro, [t for t, _ in righe], alte, passo, scala):
+                    break
+            else:
+                continue
+            c = centro
+            break
+        y0 = c.y + mm(passo, scala) * (len(righe) - 1) / 2
+        for k, ((t, ly), hh) in enumerate(zip(righe, alte)):
+            P.testo(t, (c.x, y0 - k * mm(passo, scala)), hh, ly)
 
     if quote:
         _quote_esterne(P, ed, ds)
         _quote_interne(P, ed, ds)
+    from shapely.affinity import translate
+    occupati = _ingombri_testi(P.ent) + [translate(g, P.o[0], P.o[1]) for g in tagliati.values()] + P.ante
+    for ap, a, b, n, h, lay_sigla in P.sigle:
+        _etichetta_apertura(P, ed, ap, a, b, n, h, lay_sigla, occupati)
 
-    # --- linee di sezione
-    for sez in ed.sezioni:
+    # --- linee di sezione (solo se le sezioni fanno parte delle tavole)
+    for sez in (ed.sezioni if linee_sezione else []):
         _linea_sezione(P, ed, sez)
 
     ing = Ingombro.da_entita(P.ent)
@@ -178,6 +209,26 @@ def disegna_pianta(ed: Edificio, msp, scala: int = 50, origine=(0.0, 0.0), quote
         P.testo(f"{titolo}  scala 1:{scala}", ((ing.minx + ing.maxx) / 2 - P.o[0], ing.miny - P.o[1] - mm(10, scala)),
                 4.0, "TESTI")
     return Ingombro.da_entita(P.ent)
+
+
+ABBREVIAZIONI = {"ANTIBAGNO": "ANTIB.", "DISIMPEGNO": "DISIMP.", "RIPOSTIGLIO": "RIP.", "SOGGIORNO": "SOGG.",
+                 "INGRESSO": "ING.", "LAVANDERIA": "LAV.", "CORRIDOIO": "CORR.", "SGABUZZINO": "SGAB.",
+                 "CAMERA": "CAM.", "CUCINA": "CUC.", "DEPOSITO": "DEP.", "MAGAZZINO": "MAG."}
+
+
+def _abbrevia(nome: str) -> str:
+    """Abbreviazione d'uso tecnico per i locali piccoli (come nelle planimetrie catastali: RIP., W.C.)."""
+    parole = nome.upper().split()
+    return " ".join(ABBREVIAZIONI.get(w, w if len(w) <= 6 else w[:4] + ".") for w in parole)
+
+
+def _etichetta_entra(pol, c, testi, alte, passo, scala, margine=0.8) -> bool:
+    """Il blocco di testo centrato in c sta dentro il locale con un margine (mm sulla carta)?"""
+    from shapely.geometry import box
+    larg = max(larghezza_testo(t, h) for t, h in zip(testi, alte))
+    alt = passo * (len(testi) - 1) + max(alte)
+    w, hh = mm(larg, scala) / 2, mm(alt, scala) / 2
+    return box(c.x - w, c.y - hh, c.x + w, c.y + hh).within(pol.buffer(-mm(margine, scala)))
 
 
 def disegna_schema_sezioni(ed: Edificio, msp, scala: int = 50, origine=(0.0, 0.0), rapporto: int = 4) -> Ingombro:
@@ -200,10 +251,10 @@ def _disegna_apertura(P: _Penna, ed: Edificio, ap):
     h = m.spessore.valore / 2
     alta = ap.davanzale.valore > 1.5
     lay = "APERTURE_NASCOSTE" if alta else "APERTURE"
-    if ap.altezza.ipotesi or ap.davanzale.ipotesi:
-        lay_i = "IPOTESI_DA_VERIFICARE"
-    else:
-        lay_i = None
+    # in pianta il vano e' rosso solo se larghezza o posizione sono ipotizzate; se manca solo l'altezza o il
+    # davanzale, e' rossa la sola sigla (il disegno del vano e' misurato)
+    lay_i = "IPOTESI_DA_VERIFICARE" if (ap.da.ipotesi or ap.a.ipotesi) else None
+    lay_sigla = "IPOTESI_DA_VERIFICARE" if (lay_i or ap.altezza.ipotesi or ap.davanzale.ipotesi) else "TESTI"
     if ap.tipo in ("finestra", "feritoia"):
         for k in (-1, 1):
             P.linea(a + n * h * k, b + n * h * k, lay)
@@ -219,6 +270,10 @@ def _disegna_apertura(P: _Penna, ed: Edificio, ap):
             r = float(np.linalg.norm(chiusa - cern))
             pc = cern + faccia
             pf = pc + n * lato * r
+            # zona spazzata dall'anta: le sigle non ci vanno sopra
+            zona = [pc, chiusa + faccia, chiusa + faccia + n * lato * r, pf]
+            P.ante.append(Polygon([tuple(P.T(q)) for q in zona]))
+            P.ante_mondo.append(Polygon([tuple(q) for q in zona]))
             P.linea(pc, pf, "APERTURE")
             ang_a = math.degrees(math.atan2(*(pf - pc)[::-1]))
             ang_b = math.degrees(math.atan2(*((chiusa + faccia) - pc)[::-1]))
@@ -232,12 +287,35 @@ def _disegna_apertura(P: _Penna, ed: Edificio, ap):
             P.linea(a + n * h * k, b + n * h * k, "APERTURE_NASCOSTE")
     if lay_i:
         P.poly([a + n * h, b + n * h, b - n * h, a - n * h], lay_i, chiusa=True)
-    if not getattr(P, "schema", False):
-        _etichetta_apertura(P, ed, ap, a, b, n, h, lay_i or "TESTI")
+    if not getattr(P, "schema", False):  # le sigle si posano alla fine, dove c'e' posto
+        P.sigle.append((ap, a, b, n, h, lay_sigla))
 
 
-def _etichetta_apertura(P: _Penna, ed: Edificio, ap, a, b, n, h, layer):
-    """Sigla dell'apertura (L x H in cm, davanzale) sul lato interno del locale."""
+def _ingombri_testi(entita) -> list:
+    """Zone occupate da testi, testi delle quote e linee delle quote gia' disegnati."""
+    import ezdxf.bbox
+    from shapely.geometry import box
+    out = []
+    for e in entita:
+        t = e.dxftype()
+        if t == "DIMENSION":
+            for v in e.virtual_entities():
+                if v.dxftype() == "LINE":
+                    out.append(LineString([(v.dxf.start.x, v.dxf.start.y), (v.dxf.end.x, v.dxf.end.y)]))
+        ents = [e] if t in ("TEXT", "MTEXT") else (
+            [v for v in e.virtual_entities() if v.dxftype() in ("TEXT", "MTEXT")] if t == "DIMENSION" else [])
+        for x in ents:
+            bb = ezdxf.bbox.extents([x], fast=False)
+            if bb.has_data:
+                out.append(box(bb.extmin.x, bb.extmin.y, bb.extmax.x, bb.extmax.y))
+    return out
+
+
+def _etichetta_apertura(P: _Penna, ed: Edificio, ap, a, b, n, h, layer, occupati=None):
+    """Sigla dell'apertura (L x H in cm, davanzale) accanto al vano: dal lato preferito, altrimenti nel primo
+    posto libero (lato opposto, piu' lontano), cosi' non copre nomi dei locali o quote."""
+    from shapely.affinity import rotate
+    from shapely.geometry import box
     cm = lambda x: f"{round(x * 100):d}"
     txt = f"{ap.id} {cm(ap.larghezza)}x{cm(ap.altezza.valore)}"
     if ap.davanzale.valore > 0.005:
@@ -249,16 +327,52 @@ def _etichetta_apertura(P: _Penna, ed: Edificio, ap, a, b, n, h, layer):
             break
     else:
         lato = -1 if ap.lato == "+" else 1  # muro interno: dal lato opposto all'apertura della porta
+    esterno = any(LineString([p0, p1]).distance(LineString([tuple(a), tuple(b)])) <= h + 0.02
+                  for p0, p1, _ in perimetro_esterno(ed))
     d = b - a
     ang = math.degrees(math.atan2(d[1], d[0]))
     if ang > 90 or ang <= -90:
         ang -= 180
-    pos = (a + b) / 2 + n * lato * (h + mm(3.5, P.scala))
-    P.testo(txt, pos, 1.8, layer, "MIDDLE_CENTER", rot=ang)
+    sc = P.scala
+    u = d / np.linalg.norm(d)
+    candidati = [(lato, 3.5, 0.0)] + ([] if esterno else [(-lato, 3.5, 0.0)]) + [(lato, 7.5, 0.0)]
+    if esterno:  # anche davanti al vano, fra il muro e la prima catena di quote
+        candidati += [(lato, 11.5, 0.0), (lato, 13.5, 0.0), (-lato, 3.5, 0.0)]
+    else:  # porta interna: anche piu' vicina al muro, o spostata di lato rispetto al vano
+        candidati += [(sg, 2.2, 0.0) for sg in (lato, -lato)]
+        candidati += [(sg, dd, k) for dd in (3.5, 2.2) for sg in (lato, -lato) for k in (-1, 1)]
+
+    def cerca(testo):
+        lw, lh = mm(larghezza_testo(testo, 1.8), sc), mm(1.8, sc)
+        for sgn, dist, lungo in candidati:
+            pos = (a + b) / 2 + n * sgn * (h + mm(dist, sc)) + u * lungo * (lw / 2 + float(np.linalg.norm(d)) / 2)
+            q = P.T(pos)
+            rett = rotate(box(q[0] - lw / 2, q[1] - lh / 2, q[0] + lw / 2, q[1] + lh / 2), ang, origin=(q[0], q[1]))
+            prova = rett.buffer(-mm(0.25, sc))  # sfiorarsi non e' sovrapporsi
+            if occupati is None or not any(prova.intersects(o) for o in occupati):
+                return pos, rett
+        return None
+
+    scelta = cerca(txt)
+    if scelta is None and not esterno and occupati is not None:
+        txt = ap.id  # niente posto per la sigla completa: almeno il nome, le misure sono nelle note
+        scelta = cerca(txt)
+        if scelta is None:
+            return
+    if scelta is None:
+        pos = (a + b) / 2 + n * lato * (h + mm(3.5, sc))
+        q = P.T(pos)
+        lw, lh = mm(larghezza_testo(txt, 1.8), sc), mm(1.8, sc)
+        scelta = (pos, rotate(box(q[0] - lw / 2, q[1] - lh / 2, q[0] + lw / 2, q[1] + lh / 2), ang,
+                              origin=(q[0], q[1])))
+    P.testo(txt, scelta[0], 1.8, layer, "MIDDLE_CENTER", rot=ang)
+    if occupati is not None:
+        occupati.append(scelta[1])
 
 
 def _quote_esterne(P: _Penna, ed: Edificio, ds: str):
     sc = P.scala
+    P.campate_esterne = []
     for p0, p1, nrm in perimetro_esterno(ed):
         L = math.dist(p0, p1)
         if L < 0.3:
@@ -289,17 +403,19 @@ def _quote_esterne(P: _Penna, ed: Edificio, ds: str):
                     sq = float(np.dot(np.array(q) - pa, u))
                     if 0.01 < sq < L - 0.01:
                         vani.append(pa + u * sq)
-        # direzione invertita: la catena va a sinistra di (p1->p0), cioe' verso l'esterno
-        c = catena(P.msp, [P.T(p) for p in punti], tuple(-u), mm(10, sc), ds)
+        # direzione invertita: la catena va a sinistra di (p1->p0), cioe' verso l'esterno.
+        # Dall'interno verso l'esterno: aperture (se ci sono), muri e vani (se ci sono), totale una volta sola.
+        livello = 10
+        for pts in (punti, _estremi_distinti(vani, u, pa)):
+            if len(pts) > 2:
+                c = catena(P.msp, [P.T(p) for p in pts], tuple(-u), mm(livello, sc), ds)
+                P.ent.extend(c.entita)
+                livello += 8
+        c = catena(P.msp, [P.T(pa), P.T(pb)], tuple(-u), mm(livello, sc), ds)
         P.ent.extend(c.entita)
-        livello = 18
-        if len(vani) > 2:
-            c = catena(P.msp, [P.T(p) for p in _estremi_distinti(vani, u, pa)], tuple(-u), mm(18, sc), ds)
-            P.ent.extend(c.entita)
-            livello = 26
-        if len(punti) > 2 or len(vani) > 2:
-            c = catena(P.msp, [P.T(pa), P.T(pb)], tuple(-u), mm(livello, sc), ds)
-            P.ent.extend(c.entita)
+        for pts in (punti, vani, [pa, pb]):  # misure gia' scritte fuori: dentro non si ripetono
+            ss = sorted(float(np.dot(np.array(q) - pa, u)) for q in pts)
+            P.campate_esterne += [(u, pa + u * s0, pa + u * s1) for s0, s1 in zip(ss, ss[1:])]
 
 
 def _estremi_distinti(punti, u, pa, tol=0.005):
@@ -311,6 +427,19 @@ def _estremi_distinti(punti, u, pa, tol=0.005):
         if not out or s - out[-1][0] > tol:
             out.append((s, p))
     return [p for _, p in out]
+
+
+def _gia_quotata(P: _Penna, a, b) -> bool:
+    """La misura a-b e' gia' in una catena esterna (stessa direzione, stessi estremi entro 1 cm)?"""
+    a, b = np.array(a, float), np.array(b, float)
+    for u, p, q in getattr(P, "campate_esterne", []):
+        if abs(abs(float(np.dot(u, (b - a) / np.linalg.norm(b - a)))) - 1) > 1e-3:
+            continue
+        sa, sb = sorted((float(np.dot(a, u)), float(np.dot(b, u))))
+        sp, sq = sorted((float(np.dot(p, u)), float(np.dot(q, u))))
+        if abs(sa - sp) < 0.01 and abs(sb - sq) < 0.01:
+            return True
+    return False
 
 
 def _quote_interne(P: _Penna, ed: Edificio, ds: str):
@@ -329,6 +458,9 @@ def _quote_interne(P: _Penna, ed: Edificio, ds: str):
                 verticale = abs(u[1]) > abs(u[0])
                 if verticale in fatti:
                     continue
+                if _gia_quotata(P, a, b):
+                    fatti.add(verticale)
+                    continue
                 n_in = np.array([-u[1], u[0]])
                 # distanza dal lato a cui passare: oltre l'ingombro dell'etichetta (meta' larghezza/altezza)
                 d_lab = float(np.dot(np.array([lab.x, lab.y]) - a, n_in))
@@ -344,7 +476,8 @@ def _quote_interne(P: _Penna, ed: Edificio, ds: str):
         else:
             c = list(pol.exterior.coords)
             for a, b in ((a, b) for a, b in zip(c, c[1:]) if math.dist(a, b) > 0.3):
-                P.ent.extend(quota_allineata(P.msp, P.T(a), P.T(b), mm(7, sc), ds))
+                if not _gia_quotata(P, a, b):
+                    P.ent.extend(quota_allineata(P.msp, P.T(a), P.T(b), mm(7, sc), ds))
 
 
 def _linea_sezione(P: _Penna, ed: Edificio, sez):

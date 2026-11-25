@@ -137,12 +137,16 @@ def dati_generali(ed: Edificio) -> DatiGenerali:
         coperto = coperto.union(Polygon(f.poligono))
     resto = sg.difference(coperto)
     if resto.area > 1e-6:
-        h = max((m.altezza.valore for m in ed.muri if m.altezza), default=3.0)
+        # senza copertura nel modello: fino al soffitto dei locali (altezza interna; i solai non si conoscono)
+        cime = [loc.quota_pavimento.valore + (loc.h_max or loc.h_min).valore for loc in ed.locali]
+        h = max((m.altezza.valore for m in ed.muri if m.altezza), default=max(cime, default=3.0))
         vol += resto.area * (h - zt)
     su = snr = Decimal(0)
+    # unita' non residenziale (bottega, deposito...): anche WC e ripostigli sono superficie non residenziale
+    residenziale = any(categoria(loc) == "abitabile" for loc in ed.locali)
     for loc in ed.locali:
         s = arrotonda(poligono_locale(ed, loc).area)
-        if categoria(loc) == "non residenziale":
+        if categoria(loc) == "non residenziale" or not residenziale:
             snr += s
         else:
             su += s
