@@ -291,6 +291,15 @@ def cmd_assi(a) -> int:
     return 1 if corti else 0
 
 
+def cmd_linee(a) -> int:
+    from .assi import linee_scansione
+    for nome, righe in linee_scansione(a.immagine, a.lunghezza).items():
+        print(nome.upper(), "(posizione, da, a, spessore) in pixel")
+        for r in righe:
+            print(" ", r)
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="rilievo", description="Dal rilievo alle tavole tecniche")
     sp = p.add_subparsers(dest="cmd", required=True)
@@ -318,6 +327,10 @@ def main(argv=None) -> int:
     s.add_argument("pratica")
     s.add_argument("--versione-dwg", default="ACAD2000")
     s.set_defaults(f=cmd_assi)
+    s = sp.add_parser("linee", help="linee orizzontali e verticali di una scansione raddrizzata (per gli assi)")
+    s.add_argument("immagine")
+    s.add_argument("--lunghezza", type=int, default=20, help="lunghezza minima in pixel")
+    s.set_defaults(f=cmd_linee)
     s = sp.add_parser("verifica", help="controlli automatici sul modello e sulle tavole")
     s.add_argument("pratica")
     s.set_defaults(f=cmd_verifica)

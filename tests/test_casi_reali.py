@@ -151,3 +151,19 @@ def test_vano_vicino_a_un_tramezzo_arriva_alla_faccia():
     assert not g["massa"].intersects(box(2.95, 1.12, 3.05, 1.94))
     pezzo = g["massa"].intersection(box(2.9, 1.9, 3.1, 1.95))
     assert pezzo.area < 1e-6  # il vano arriva alla faccia: nessun pezzetto da 4 cm
+
+
+# --- C004 (piano terra, catastale ortogonale, 26/11/2026): `rilievo assi` pulito al primo giro.
+C004 = Path(__file__).parents[1] / "pratiche" / "C004" / "modello" / "assi.yaml"
+
+
+def test_c004_pianta_ape_da_assi(tmp_path):
+    import ezdxf
+    from rilievo.assi import carica, locali, pezzetti, pianta_ape_da_assi
+    d = carica(C004)
+    out = pianta_ape_da_assi(d, tmp_path, "C004")
+    doc = ezdxf.readfile(out["dxf"])
+    assert doc.header["$INSUNITS"] == 6 and {e.dxf.layer for e in doc.modelspace()} == {"PIANTA"}
+    assert pezzetti(out["dxf"]) == []  # anche lo scalino di 1 mm del primo giro
+    sup = sorted(p.area for p in locali(d))
+    assert len(sup) == 9 and abs(sum(sup) - 110.7) < 0.5 and abs(sup[-1] - 31.4) < 0.2  # soggiorno 31,4 m2

@@ -220,3 +220,27 @@ def pezzetti(dxf: str | Path, minimo: float = 0.09) -> list[tuple]:
             p.append(p[0])
         out += [(a, b) for a, b in zip(p, p[1:]) if math.dist(a, b) < minimo]
     return out
+
+
+def linee_scansione(immagine: str | Path, lunghezza: int = 20, soglia: int = 150) -> dict:
+    """Linee orizzontali e verticali di una scansione raddrizzata (apertura morfologica): per ognuna la posizione
+    media in pixel, l'inizio, la fine e lo spessore. Serve a leggere gli assi dei muri (lezione C004)."""
+    import cv2
+    img = cv2.imread(str(immagine), cv2.IMREAD_GRAYSCALE)
+    if img is None:
+        raise FileNotFoundError(immagine)
+    b = (img < soglia).astype(np.uint8)
+    out = {}
+    for nome, k in (("orizzontali", (lunghezza, 1)), ("verticali", (1, lunghezza))):
+        o = cv2.morphologyEx(b, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, k))
+        n, lab, st, _ = cv2.connectedComponentsWithStats(o)
+        righe = []
+        for i in range(1, n):
+            x, y, w, h, _a = (int(v) for v in st[i])
+            ys, xs = np.nonzero(lab == i)
+            if nome == "orizzontali":
+                righe.append((round(float(ys.mean()), 1), x, x + w, h))
+            else:
+                righe.append((round(float(xs.mean()), 1), y, y + h, w))
+        out[nome] = sorted(righe)
+    return out

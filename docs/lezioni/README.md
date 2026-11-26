@@ -9,6 +9,7 @@ Prima di iniziare una pratica si leggono tutte le lezioni del tipo di lavoro ric
 | C001 | pianta da planimetria catastale (PDF) per APE | [C001-pianta-catastale-per-ape.md](C001-pianta-catastale-per-ape.md) |
 | C002 | appartamento da catastale storto per APE (solo disegno) | [C002-appartamento-catastale-per-ape.md](C002-appartamento-catastale-per-ape.md) |
 | C003 | catastale con muri inclinati per APE (assi a mano) | [C003-catastale-muri-inclinati-per-ape.md](C003-catastale-muri-inclinati-per-ape.md) |
+| C004 | catastale ortogonale per APE con `rilievo assi` | [C004-catastale-ortogonale-assi.md](C004-catastale-ortogonale-assi.md) |
 
 ## Alla fine di ogni pratica (obbligatorio, anche se è andata bene)
 

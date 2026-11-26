@@ -34,6 +34,8 @@ Disegni imprecisi: interpretali con buon senso da tecnico, non ricalcarli.
   Leggi a mano gli assi (rette) sulla scansione raddrizzata con griglia, sovrapponili alla scansione per
   controllo, scrivili in `modello/assi.yaml` (metri) e lancia `rilievo assi <pratica>`: muri 30/10 dritti,
   vani, ingresso con anta, balconi; segnala i lati sotto i 9 cm. Lezione `docs/lezioni/C003-...`.
+- `rilievo assi` va bene anche per le piante ortogonali (C004): muri esterni dalla faccia interna del
+  catastale + 15 cm; linee lette con `rilievo linee <png>`; porte sulle crocette; scale e corti non si disegnano.
 
 ## Passi
 
