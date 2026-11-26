@@ -14,5 +14,8 @@ quote/legende/scritte). Disegno: `rilievo assi pratiche/C005` (assi in `assi.yam
 - Altezza interna 3,10 (scritta nel catastale). Nord verso l'alto del foglio (simbolo ORIENTAMENTO).
 
 ## Domande per l'utente
-- La striscia a est e' un balcone? (linea sottile nel catastale)
 - Altezze di finestre e davanzali; cosa c'e' sopra (ultimo piano?) e sotto (appartamento riscaldato?).
+
+## Risposte dell'utente (26/11/2026)
+- La striscia a est e' un balcone: confermato.
+- Piani sopra e sotto: li verifica l'utente in Blumatica.

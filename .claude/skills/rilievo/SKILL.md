@@ -37,6 +37,7 @@ Disegni imprecisi: interpretali con buon senso da tecnico, non ricalcarli.
 - `rilievo assi` va bene anche per le piante ortogonali (C004): muri esterni dalla faccia interna del
   catastale + 15 cm; linee lette con `rilievo linee <png>`; porte sulle crocette; scale e corti non si disegnano.
   Se si cambia `assi.py`, rigenerare e confrontare le pratiche gia' consegnate (lezione C005).
+  Linea sottile lungo un muro esterno con porte-finestre o finestre = balcone: solo il bordo, senza chiedere.
 
 ## Passi
 

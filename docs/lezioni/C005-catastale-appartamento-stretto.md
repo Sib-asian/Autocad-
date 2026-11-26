@@ -17,3 +17,6 @@ Controllato che C003 e C004 restano identiche con la regola nuova.
 ## Regole
 1. Dopo ogni modifica a `assi.py`: rigenerare le pratiche gia' fatte e confrontarle (devono restare uguali o
    migliorare), e rimandare all'utente il file solo se cambia.
+2. Striscia a linea sottile lungo un muro esterno, su cui danno porte-finestre o finestre: e' un balcone
+   (confermato dall'utente). Si disegna solo il bordo, senza chiedere.
+3. Piani sopra e sotto (per l'APE): l'utente li verifica da se'; basta ricordarlo nella consegna.
