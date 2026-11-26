@@ -167,3 +167,31 @@ def test_c004_pianta_ape_da_assi(tmp_path):
     assert pezzetti(out["dxf"]) == []  # anche lo scalino di 1 mm del primo giro
     sup = sorted(p.area for p in locali(d))
     assert len(sup) == 9 and abs(sum(sup) - 110.7) < 0.5 and abs(sup[-1] - 31.4) < 0.2  # soggiorno 31,4 m2
+
+
+def test_vano_non_attraversa_il_tramezzo():
+    """C005: con la tolleranza a 12 cm una finestra arrivava alla faccia opposta di un tramezzo innestato."""
+    from shapely.geometry import box
+    from rilievo.assi import geometria
+    d = {"spessori": {"esterni": 0.30, "interni": 0.10},
+         "contorno": [[0, 0], [6, 0], [6, 4], [0, 4]],
+         "tramezzi": [[[0, 2], [6, 2]]],
+         # finestra sul muro est che finisce 2 cm sotto il tramezzo (faccia a y = 1,95)
+         "finestre": [{"da": [6, 1.0], "a": [6, 1.93]}]}
+    g = geometria(d)
+    a, b, _ = g["finestre"][0]
+    assert abs(max(a[1], b[1]) - 1.95) < 1e-6  # alla faccia dalla sua parte, non a 2,05
+    assert g["massa"].intersection(box(5.85, 1.96, 6.15, 2.04)).area > 0.02  # il nodo del tramezzo resta
+
+
+# --- C005 (secondo piano, appartamento stretto, 26/11/2026)
+C005 = Path(__file__).parents[1] / "pratiche" / "C005" / "modello" / "assi.yaml"
+
+
+def test_c005_pianta_ape_da_assi(tmp_path):
+    from rilievo.assi import carica, locali, pezzetti, pianta_ape_da_assi
+    d = carica(C005)
+    out = pianta_ape_da_assi(d, tmp_path, "C005")
+    assert pezzetti(out["dxf"]) == []
+    sup = sorted(p.area for p in locali(d))
+    assert len(sup) == 9 and abs(sum(sup) - 91.2) < 0.5

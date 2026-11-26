@@ -93,20 +93,22 @@ def geometria(d: dict) -> dict:
             A = np.array([u, -v]).T
             s = float(np.linalg.solve(A, t[0] - a)[0])
             mezzo = t[2] / 2 / seno
-            out += [s - mezzo, s + mezzo]
+            out.append((s - mezzo, s + mezzo))  # facce del muro che s'innesta: prima e dopo
         return out
 
-    def vano(p, q, muro, tol=0.06):
+    def vano(p, q, muro, tol=0.12):
         """Vano da p a q sull'asse del muro; un estremo a meno di `tol` dalla faccia di un muro che s'innesta
-        arriva alla faccia: niente pezzetti di muro di pochi centimetri (pratica C003)."""
+        arriva alla faccia: niente pezzetti di muro di pochi centimetri (pratica C003). 12 cm dalla C005: le
+        crocette del catastale sono approssimate e un pezzetto da 8-12 cm si vede come un dentino."""
         a, b, _ = muro
         u = (b - a) / np.linalg.norm(b - a)
         s0, s1 = sorted(float(np.dot(np.asarray(x, float) - a, u)) for x in (p, q))
-        for f in facce(muro):
-            if abs(s0 - f) < tol:
-                s0 = f
-            if abs(s1 - f) < tol:
-                s1 = f
+        for f0, f1 in facce(muro):
+            # il vano arriva alla faccia del muro dalla sua parte, mai alla faccia opposta (non lo attraversa)
+            if abs(s0 - f1) < tol:
+                s0 = f1
+            if abs(s1 - f0) < tol:
+                s1 = f0
         return a + u * s0, a + u * s1, u
 
     for p in d.get("porte_interne", []):

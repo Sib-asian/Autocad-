@@ -36,6 +36,7 @@ Disegni imprecisi: interpretali con buon senso da tecnico, non ricalcarli.
   vani, ingresso con anta, balconi; segnala i lati sotto i 9 cm. Lezione `docs/lezioni/C003-...`.
 - `rilievo assi` va bene anche per le piante ortogonali (C004): muri esterni dalla faccia interna del
   catastale + 15 cm; linee lette con `rilievo linee <png>`; porte sulle crocette; scale e corti non si disegnano.
+  Se si cambia `assi.py`, rigenerare e confrontare le pratiche gia' consegnate (lezione C005).
 
 ## Passi
 
