@@ -21,3 +21,6 @@ completare ("noti cio' che manca"), la TAV 2 approvata da non toccare.
 3. Quello che non c'e' nel file (es. aerofotogrammetrico, dati dell'istanza) non si inventa: cornice pronta,
    nota su layer non stampabile, domanda all'utente.
 4. Nessun nome del cliente nei file del repository (il repository e' pubblico).
+
+## Esito
+Consegna approvata dall'utente al primo giro ("impeccabile"): il metodo sopra e' quello da ripetere.
