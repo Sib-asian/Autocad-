@@ -39,6 +39,13 @@ Disegni imprecisi: interpretali con buon senso da tecnico, non ricalcarli.
   Se si cambia `assi.py`, rigenerare e confrontare le pratiche gia' consegnate (lezione C005).
   Linea sottile lungo un muro esterno con porte-finestre o finestre = balcone: solo il bordo, senza chiedere.
 
+## Completare tavole di un DWG esistente (lezione T001)
+
+- DWG -> DXF con ODA; trovare le tavole (cornici) e cosa manca rispetto all'esempio; copiare stile di testi,
+  quote, retini e layer dell'esempio; geometria dalla tavola approvata.
+- Non toccare le tavole che l'utente approva: confronto automatico entita' per entita' prima di consegnare.
+- Consegna nello stesso formato DWG dell'originale. Quello che manca nel file si chiede, non si inventa.
+
 ## Passi
 
 1. **Pratica.** `rilievo nuova <codice>`; copia gli input in `input/schizzi`, `input/dwg`, `input/foto`

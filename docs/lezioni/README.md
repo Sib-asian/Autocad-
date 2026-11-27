@@ -11,6 +11,7 @@ Prima di iniziare una pratica si leggono tutte le lezioni del tipo di lavoro ric
 | C003 | catastale con muri inclinati per APE (assi a mano) | [C003-catastale-muri-inclinati-per-ape.md](C003-catastale-muri-inclinati-per-ape.md) |
 | C004 | catastale ortogonale per APE con `rilievo assi` | [C004-catastale-ortogonale-assi.md](C004-catastale-ortogonale-assi.md) |
 | C005 | appartamento stretto per APE; vani e facce dei tramezzi | [C005-catastale-appartamento-stretto.md](C005-catastale-appartamento-stretto.md) |
+| T001 | completare una tavola di un DWG esistente su una tavola d'esempio | [T001-completare-tavola-da-esempio.md](T001-completare-tavola-da-esempio.md) |
 
 ## Alla fine di ogni pratica (obbligatorio, anche se è andata bene)
 

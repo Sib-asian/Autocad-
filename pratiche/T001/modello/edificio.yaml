@@ -1,0 +1,15 @@
+# Modello dell'edificio. Unita': metri. Un numero da solo = misura presa sul posto.
+# Per un dato non misurato: {valore: 2.10, fonte: ipotesi, nota: "da foto"}
+pratica:
+  codice: T001
+  tipo: rilievo        # rilievo | sanatoria | cila | scia | permesso | perizia | progetto
+  titolo: ""
+  committente: ""
+  comune: ""
+nord_gradi: 90         # direzione del Nord in pianta (90 = verso l'alto)
+nord_ipotizzato: true
+muri: []
+aperture: []
+locali: []
+falde: []
+sezioni: []

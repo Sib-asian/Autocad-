@@ -10,6 +10,7 @@ tecniche (pianta, prospetti, sezioni) in DWG AutoCAD 2018 e PDF. Si risponde in 
 - Test: `pytest -q` (circa un minuto).
 - Ogni dato non misurato va nel modello con `fonte: ipotesi`: esce in rosso nelle tavole e nel registro.
 - Prima di ogni pratica leggere le lezioni in `docs/lezioni/` del tipo di lavoro (prospetti e sezioni: R001;
-  piante da catastale e APE: C001-C005).
+  piante da catastale e APE: C001-C005;
+  completare tavole di un DWG esistente: T001).
 - Alla fine di ogni pratica, anche se è andata bene: lezione, test del caso reale, controllo automatico se
   possibile, procedura aggiornata (vedi `docs/lezioni/README.md`). Così ogni lavoro rende il successivo migliore.
